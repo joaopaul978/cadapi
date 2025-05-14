@@ -22,7 +22,7 @@ app.use(express.json());
 // segurança na entrada, cara crachar
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-    res.header("Access-Control-Allow-Methods", "PUT, POST, DELETE");
+    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
     res.header("Access-Control-Allow-Headers", "X-PINGOTHER,Content-Type, autorizacao");
     res.append('Access-Control-Allow-Credentials', 'true');
     app.use(cors());
