@@ -1,3 +1,1 @@
-{ "version": 2,
-"builds":[{"src": "./scr/index.js", "use":"@vercel/node" }],
- "routes": [{ "src": "/(.*)", "dest": "/" }] }
+{ "version": 2, "rewrites": [{ "source": "/(.*)", "destination": "/api" }] }
