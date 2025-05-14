@@ -34,13 +34,8 @@ const db = mysql.createPool({
     host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
 });
 
-if (db) {
-    const port = 3001;
-    app.listen(port, () => {
-        console.log('Rodando na porta:', port);
-    })
-} else { console.log('Erro: Conexão com Banco de Dados') }
-
+app.get("/", (req, res) => res.send("Express on Vercel"));
+app.listen(3000, () => console.log("Serviço rodando on port 3000."));
 
 //app.use(session({secret:'chavesecreta'}));
 app.use(express.json());
