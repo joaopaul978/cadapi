@@ -20,14 +20,14 @@ app.use(express.json());
 
 
 // segurança na entrada, cara crachar
-app.use((req, res, next) => {
+app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "https://cadastro-ruddy-ten.vercel.app");
-    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+    res.header("Access-Control-Allow-Methods", "GET, HEAD, PUT, POST, DELETE, PATCH");
     res.header("Access-Control-Allow-Headers", "X-PINGOTHER,Content-Type, autorizacao");
-    res.append('Access-Control-Allow-Credentials', 'true');
+    //res.append('Access-Control-Allow-Credentials', 'true');
     app.use(cors());
     next();
-});
+  });
 const db = mysql.createPool({
     // host:"localhost", <-- erro
     host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
