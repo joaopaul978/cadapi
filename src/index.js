@@ -28,10 +28,9 @@ app.use((req, res, next) => {
     app.use(cors());
     next();
 });
-
 const db = mysql.createPool({
     // host:"localhost", <-- erro
-    host: 'sql212.infinityfree.com', port: "3306", user: "if0_38984874", password: "Joaopaul978", database: "if0_38984874_dados"
+    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
 });
 
 app.get("/", (req, res) => res.send("Express on Vercel"));
