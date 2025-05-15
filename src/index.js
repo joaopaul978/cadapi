@@ -22,7 +22,7 @@ app.use(express.json());
 // segurança na entrada, cara crachar
 
   var corsOptions = {
-    origin: 'https://cadastro-ruddy-ten.vercel.app:8080',
+    origin: 'https://cadastro-ruddy-ten.vercel.app',
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
   }
 const db = mysql.createPool({
@@ -42,7 +42,7 @@ const { NOMEM } = require("dns");
 app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
 app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
 
-API = 'http://localhost:3001';
+API = 'https://cadapi-oz3i.vercel.app';
 
 const urlBras = `${API}/brasao/`;
 const urlPerf = API + '/perfil/';
