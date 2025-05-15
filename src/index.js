@@ -4106,7 +4106,7 @@ app.delete("/entidade/:id_ent", verify, (req, res) => {
 app.get("/getAllEnt/", (req, res) => {
     let SQL = "select id_ent,cod_ent,entidade,email,cnpj,data_cad,data_alt,urlbras,ativo from entidades order by entidade asc";
     db.query(SQL, (err, result) => {
-        if (err) { res.status(404).json("Registros não Encontrado!") }
+        if (err) { res.json({ err })  }
         else { res.json({ result }) }
     });
 });
