@@ -103,7 +103,7 @@ const generateRefreshToken = (user) => {
     return jwt.sign({ id: user.id, prv: user.prv }, "myRefreshSecretKey");
 }
 
-app.post('/login',cors(corsOptions),  function(req, res, next) {   
+app.post('/login', cors(corsOptions),function(req, res, next) {     
     const { id_ent, username, password } = req.body;
     let SqlEnt = `select id_ent,cod_ent,entidade,cnpj,email,telefone,rua,numero,bairro,cidade,uf,urlperf,urlbras,caminho,ver,ativo FROM entidades WHERE id_ent = ${id_ent}`;
     db.query(SqlEnt, (err, entd) => {
