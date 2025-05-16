@@ -119,7 +119,15 @@ const generateAccesToken = (user) => {
 const generateRefreshToken = (user) => {
     return jwt.sign({ id: user.id, prv: user.prv }, "myRefreshSecretKey");
 }
-
+app.get('/getAllEnt2', function(req, res, next) {  console.log('yyyyyyyy',req.headers)
+    // Handle the get for this route
+    let SQL = "select id_ent,cod_ent,entidade,email,cnpj,data_cad,data_alt,urlbras,ativo from entidades order by entidade asc";
+    db.query(SQL, (err, result) => {
+        //res.status(404).json("Registros não Encontrado!")
+        if (err) { console.log(err) }
+        else { res.json({ result }) }
+    });
+  });
 app.post('/login', function(req, res, next) {     
     const { id_ent, username, password } = req.body;
     let SqlEnt = `select id_ent,cod_ent,entidade,cnpj,email,telefone,rua,numero,bairro,cidade,uf,urlperf,urlbras,caminho,ver,ativo FROM entidades WHERE id_ent = ${id_ent}`;
