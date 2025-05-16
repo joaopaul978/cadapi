@@ -20,14 +20,28 @@ app.use(express.json());
 
 
 // segurança na entrada, cara crachar
-
-  var corsOptions = {
-  origin: 'https://cadastro-ruddy-ten.vercel.app',
-  'sec-fetch-site': 'same-site',
-  'sec-fetch-mode': 'cors',
-  'sec-fetch-dest': 'empty',
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-  }
+// app.use(function(req, res, next) {
+//     res.header("Access-Control-Allow-Origin", "https://cadastro-ruddy-ten.vercel.app");
+//     res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+//     res.header("Access-Control-Allow-Headers", "X-PINGOTHER,Content-Type, autorizacao");
+//     //res.append('Access-Control-Allow-Credentials', 'true');
+//     app.use(cors());
+//     next();
+//   });
+app.use(function (req, res, next) {
+    res.setHeader('Access-Control-Allow-Origin', 'https://cadastro-ruddy-ten.vercel.app');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    next();
+});
+  // var corsOptions = {
+  // origin: 'https://cadastro-ruddy-ten.vercel.app',
+  // 'sec-fetch-site': 'same-site',
+  // 'sec-fetch-mode': 'cors',
+  // 'sec-fetch-dest': 'empty',
+  //   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  // }
 const db = mysql.createPool({
     // host:"localhost", <-- erro
     host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
@@ -106,7 +120,7 @@ const generateRefreshToken = (user) => {
     return jwt.sign({ id: user.id, prv: user.prv }, "myRefreshSecretKey");
 }
 
-app.post('/login', cors(corsOptions),function(req, res, next) {     
+app.post('/login', function(req, res, next) {     
     const { id_ent, username, password } = req.body;
     let SqlEnt = `select id_ent,cod_ent,entidade,cnpj,email,telefone,rua,numero,bairro,cidade,uf,urlperf,urlbras,caminho,ver,ativo FROM entidades WHERE id_ent = ${id_ent}`;
     db.query(SqlEnt, (err, entd) => {
