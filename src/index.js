@@ -20,35 +20,63 @@ app.use(express.json());
 
 
 // segurança na entrada, cara crachar
-// app.use(function(req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "https://cadastro-ruddy-ten.vercel.app");
-//     res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-//     res.header("Access-Control-Allow-Headers", "X-PINGOTHER,Content-Type, autorizacao");
-//     //res.append('Access-Control-Allow-Credentials', 'true');
-//     app.use(cors());
-//     next();
-//   });
+/*app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.header("Access-Control-Allow-Methods", "PUT, POST, DELETE");
+    res.header("Access-Control-Allow-Headers", "X-PINGOTHER,Content-Type, autorizacao");
+    res.append('Access-Control-Allow-Credentials', 'true');
+    app.use(cors());
+    next();
+});*/
+
+const db = mysql.createPool({
+    // host:"localhost", <-- erro
+    host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
+});
+
+//const db = mysql.createPool({
+//    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+//});
+
+
+/*
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+    res.header("Access-Control-Allow-Headers", "X-PINGOTHER,Content-Type, autorizacao");
+    //res.append('Access-Control-Allow-Credentials', 'true');
+    app.use(cors());
+    next();
+  });
+*/
 app.use(function (req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', 'https://cadastro-ruddy-ten.vercel.app');
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8888');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
     res.setHeader('Access-Control-Allow-Credentials', true);
     next();
 });
-  // var corsOptions = {
-  // origin: 'https://cadastro-ruddy-ten.vercel.app',
-  // 'sec-fetch-site': 'same-site',
-  // 'sec-fetch-mode': 'cors',
-  // 'sec-fetch-dest': 'empty',
-  //   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-  // }
-const db = mysql.createPool({
-    // host:"localhost", <-- erro
-    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
-});
+var corsOptions = {
+    origin: 'http://localhost:3000',
+    'sec-fetch-site': 'same-site',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-dest': 'empty',
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+
+    //colocar nos endpoits
+    //cors(corsOptions),
+}
+
+
+// if (db) {
+//     const port = 3001;
+//     app.listen(port, () => {
+//         console.log('Rodando na porta:', port);
+//     })
+// } else { console.log('Erro: Conexão com Banco de Dados') }
 
 app.get("/", (req, res) => res.send("Express on Vercel"));
-app.listen(3000, () => console.log("Serviço rodando on port 3000."));
+app.listen(3001, () => console.log("Serviço rodando on port 3001."));
 
 //app.use(session({secret:'chavesecreta'}));
 app.use(express.json());
@@ -59,13 +87,13 @@ const { NOMEM } = require("dns");
 app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
 app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
 
-API = 'https://cadapi-oz3i.vercel.app';
+API = 'http://localhost:3001';
 
 const urlBras = `${API}/brasao/`;
 const urlPerf = API + '/perfil/';
 
 app.get('/versaoteste/', async (req, res) => {
-        res.send('Serviço node Versão: 1.0,0');
+    res.send('Serviço node: Versão erbeti rixa: ops, 1.0, aê Rita');
 })
 
 const verify = (req, res, next) => {
@@ -74,13 +102,13 @@ const verify = (req, res, next) => {
         const token = authHeader.split(' ')[1];
         jwt.verify(token, "Key999025", (err, user) => {
             if (err) {
-                return res.status(403).json('Sessão Expirada! - 1');
+                return res.status(403).json('Sessão Expirada!');
             }
             req.user = user;
             next();
         });
     } else {
-        res.status(403).json('Sessão Expirada! - 2');;
+        res.status(403).json('Sessão Expirada!!!');;
     }
 };
 
@@ -119,7 +147,9 @@ const generateAccesToken = (user) => {
 const generateRefreshToken = (user) => {
     return jwt.sign({ id: user.id, prv: user.prv }, "myRefreshSecretKey");
 }
-app.get('/getAllEnt2', function(req, res, next) {  console.log('yyyyyyyy',req.headers)
+
+app.get('/getAllEnt2', function (req, res, next) {
+    console.log('req.headers', req.headers)
     // Handle the get for this route
     let SQL = "select id_ent,cod_ent,entidade,email,cnpj,data_cad,data_alt,urlbras,ativo from entidades order by entidade asc";
     db.query(SQL, (err, result) => {
@@ -127,20 +157,22 @@ app.get('/getAllEnt2', function(req, res, next) {  console.log('yyyyyyyy',req.he
         if (err) { console.log(err) }
         else { res.json({ result }) }
     });
-  });
-app.post('/login', function(req, res, next) {     
+});
+
+
+app.post('/login', function (req, res, next) {
     const { id_ent, username, password } = req.body;
-    let SqlEnt = `select id_ent,cod_ent,entidade,cnpj,email,telefone,rua,numero,bairro,cidade,uf,urlperf,urlbras,caminho,ver,ativo FROM entidades WHERE id_ent = ${id_ent}`;
+    let SqlEnt = `select id_ent,cod_ent,urlperf,urlbras,caminho,ver,ativo FROM entidades WHERE id_ent = ${id_ent}`;
     db.query(SqlEnt, (err, entd) => {
         if (err) { return res.status(404).json('404!') };
         if (entd[0].ativo === 'S') {
             //const Token_acesso = jwt.sign({id:user[0].id_user, nome: user[0].nome}, "mySecretKey",{expiresIn: "15m"});
-            let sqlUser = `select id_user,prv,nome,username, role,imgperf,ativo from usuarios where id_ent = ${id_ent} and username = '${username}' and password = '${password}'`;
+            let sqlUser = `select id_user,prv,nome,username,password, role,imgperf,ativo from usuarios where id_ent = ${id_ent} and username = '${username}' and password = '${password}'`;
             db.query(sqlUser, (err, user) => {
                 if (user[0]) {
                     if (user[0]?.ativo === 'S') {
                         const date = new Date().toLocaleString() + '';
-                        console.log(entd[0].cod_ent, 'Login:', user[0].nome, date);
+                        console.log('Entidade:', entd[0].cod_ent, 'Login:', user[0].nome, date);
                         if (err) { console.log(err.response) }
                         else {
                             res.set(entd[0]); msg = "Login: Bem vindo!";
@@ -151,24 +183,17 @@ app.post('/login', function(req, res, next) {
                                     prv: user[0].prv,
                                     nome: user[0].nome,
                                     username: user[0].username,
+                                    password: user[0].password,
                                     role: user[0].role,
                                     urlperf: entd[0].urlperf,
                                     imgperf: user[0].imgperf,
                                     id_ent: entd[0].id_ent,
                                     cod_ent: entd[0].cod_ent,
-                                    entidade: entd[0].entidade,
-                                    cnpj: entd[0].cnpj,
-                                    email: entd[0].email,
-                                    telefone: entd[0].telefone,
-                                    rua: entd[0].rua,
-                                    numero: entd[0].numero,
-                                    bairro: entd[0].bairro,
-                                    cidade: entd[0].cidade,
-                                    uf: entd[0].uf,
+                                    email: entd[0].email,                                   
                                     ver: entd[0].ver,
                                     //imgbras: entd[0].urlbras + entd[0].caminho
                                 }, "Key999025",
-                                    { expiresIn: "30m" }), msg
+                                    { expiresIn: "2h" }), msg
                             })
                         }
                     } else { res.status(401).json('Usuário Inativo!'); }
@@ -236,7 +261,6 @@ app.get('/pessoasIdlancAll/', async (req, res) => {
                 }, lanc_Map)
 
                 let result = Object.values(resultMap);
-                console.log("Result:", result);
                 res.status(200).json({ result });
             });
         });
@@ -251,7 +275,7 @@ app.get('/pessoaIdlanc/:id_pessoa/:id_ent', async (req, res) => {
         if (err) { res.status(404).json('404!') }
         else { res.set({ result_pessoa }); }
 
-        let sql2 = `SELECT lancmtos.cod_lanc,lancmtos.nossonum,lancmtos.cod_rec,receitas.des_rec, lancmtos.valor_real,lancmtos.pago,lancmtos.data_lanc 
+        let sql2 = `SELECT lancmtos.cod_lanc,lancmtos.nossonum,lancmtos.cod_rec,receitas.des_rec, lancmtos.valor_real,lancmtos.pago,lancmtos.data_lanc,lancmtos.data_venc
             FROM lancmtos left join receitas on lancmtos.id_rec = receitas.id_rec WHERE lancmtos.id_pessoa = ${id_pessoa} and lancmtos.pago = 'N' and lancmtos.situacao = 'E' order by lancmtos.data_lanc `;
         db.query(sql2, (err, result_lanc) => {
             if (err) { res.status(404).json('404!2') }
@@ -395,7 +419,6 @@ app.get('/pessoasIdlanc/:id_pessoa', async (req, res) => {
                 }, lanc_Map)
 
                 let result = Object.values(resultMap, resultMap1);
-                console.log("Result:", result);
                 res.status(200).json({ result });
             });
         });
@@ -404,7 +427,7 @@ app.get('/pessoasIdlanc/:id_pessoa', async (req, res) => {
 
 //===========Pessoas========//
 app.get('/consultarCnpj/:cpf_cnpj', (req, res) => {
-    const { cpf_cnpj } = req.params; console.log(cpf_cnpj.replace(/[^0-9]/g, ''))
+    const { cpf_cnpj } = req.params;
     axios.get(`https://receitaws.com.br/v1/cnpj/${cpf_cnpj.replace(/[^0-9]/g, '')}`)
         .then((response) => {
             if (response) { res.status(200).send(response.data) }
@@ -473,8 +496,7 @@ app.post("/pessoa", verify, async (req, res) => {
                             if (!insc_muni) {
                                 insc_muni = cod_pessoa + '/' + new Date().getFullYear()
                             }
-                            //   nome = nome.replace(/[^0-9]/g,'');
-                            console.log('nome4', nome_pessoa);
+                            //   nome = nome.replace(/[^0-9]/g,'');                            
                             let SQL = `insert into pessoas (id_ent,id_user,cod_pessoa,nome_pessoa,fantasia, cpf_cnpj, email, telefone,fixo, rua, numero, bairro, cidade, uf,cep,tipocad,situacao_cad,porte,vigilancia,obs,cod_natureza, ultima_atualizacao,complemento,site,area_mercantil,numero_proc,data_encerramento,data_abertura,data_cad, usu_cad, 
         insc_muni,insc_estad,insc_junta,cod_segmentoativ,classetrib,cod_cnae,cod_cnae_grupo,iss,iss_retido,tx_virgilancia,alvara,alvara_trans) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
                             db.query(SQL, [id_ent, id_user, cod_pessoa, nome_pessoa, fantasia, cpf_cnpj.replace(/[^0-9]/g, ''), email, telefone, fixo, rua, numero, bairro, cidade, uf, cep, tipocad, situacao_cad, porte, vigilancia, obs, cod_natureza, ultima_atualizacao, complemento, site, area_mercantil, numero_proc, data_encerramento, data_abertura, data_cad, usu_cad,
@@ -603,16 +625,17 @@ app.post("/pessoasPesq", verify, (req, res) => {
     let { id_ent, campo, text1, text2, limit_rows } = req.body;
     let CONDICAO = '';
     if (text1 === '*') { text1 = ''; text2 = '' }
+    if (!limit_rows) { limit_rows = 500 }
     switch (campo) {
-        case 'data_cad': CONDICAO = `pessoas.data_cad between "${text1.split('-').reverse().join('/')}" and "${text2.split('-').reverse().join('/')}" order by pessoas.cod_pessoa desc limit ${limit_rows}`; break;
-        case 'cod_pessoa': CONDICAO = `pessoas.cod_pessoa = '${text1}'`; break;
-        case 'nome_pessoa': CONDICAO = `pessoas.nome_pessoa like "%${text1}%" order by pessoas.cod_pessoa desc limit ${limit_rows}`; console.log(CONDICAO); break;
-        case 'cpf_cnpj': CONDICAO = `pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%" order by pessoas.cod_pessoa desc limit ${limit_rows}`; break;
+        case 'data_cad': CONDICAO = `pessoas.data_cad between "${text1.replace('/','-')}" and "${text2.replace('/','-')}" order by pessoas.cod_pessoa`; break;
+        case 'cod_pessoa': CONDICAO = `pessoas.cod_pessoa like '${text1}%' order by pessoas.cod_pessoa`; break;
+        case 'nome_pessoa': CONDICAO = `pessoas.nome_pessoa like "${text1}%" order by pessoas.cod_pessoa`; break;
+        case 'cpf_cnpj': CONDICAO = `pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%" order by pessoas.cod_pessoa`; break;
     }
     if (CONDICAO) {
         SQL = `select pessoas.id_pessoa,pessoas.tipocad, pessoas.cod_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, pessoas.cep, pessoas.rua,pessoas.numero,pessoas.email,pessoas.telefone,pessoas.fixo,
-    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} and ${CONDICAO}`;
-        db.query(SQL, (err, result) => {
+    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`;
+        db.query(SQL, (err, result) => { console.log(SQL)
             if (err) { res.status(404).json('404!') }
             else res.send(result);
         });
@@ -650,7 +673,7 @@ app.delete("/delPessoa/:id_pessoa/:id_user", verify, (req, res) => {
 app.post("/ITBIPost", async (req, res) => {
     let { id_ent, cod_imovel, inscricao, id_vendedor, id_comprador, cpf_cnpj_comprador, cpf_cnpj_vendedor, pago, negocio_juridico, nome_comprador, nome_vendedor, num_processo, valor_taxa, area_terreno, area_construida, valor_venal, obs_itbi,
         oficio, tipo_localizacao, tipo_lanc, id_user, aliq_avaliacao, aliq_itbi, valor_avaliado, valor_itbi, valor_nj, valor_pago, valor_total, data_cad, data_emissao, data_venc, id_assin1, id_assin2, id_assin3 } = req.body;
-    let SelCdoc = `select max(cod_itbi) as cod_itbi FROM itbi WHERE id_ent = ${id_ent}`; console.log(req.body)
+    let SelCdoc = `select max(cod_itbi) as cod_itbi FROM itbi WHERE id_ent = ${id_ent}`;
     db.query(SelCdoc, (err, result1) => {
         if (err) { res.status(404).json('404!2') }
         else {
@@ -732,7 +755,7 @@ app.post("/ITBIPost", async (req, res) => {
     });
 });
 app.put("/ITBIPut/", verify, async (req, res) => {
-    let { id_user, id_itbi, obs_itbi, negocio_juridico, endereco, id_assin1, id_assin2, id_assin3 } = req.body; console.log(req.body)
+    let { id_user, id_itbi, obs_itbi, negocio_juridico, endereco, id_assin1, id_assin2, id_assin3 } = req.body;
     //const {data_cad} = Date.now();  
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
@@ -793,17 +816,18 @@ app.post("/itbiPesq/", verify, (req, res) => {
     if (text1 === '*') { text1 = ''; text2 = '' }
     let CONDICAO = '';
     switch (campo) {
-        case 'data_cad': CONDICAO = `itbi.data_cad between "${text1.split('-').reverse().join('/')}" and "${text2.split('-').reverse().join('/')}" order by itbi.cod_itbi desc limit ${limit_rows}`; break;
+        case 'data_cad': CONDICAO = `itbi.data_cad between "${text1.replace('/','-')}" and "${text2.replace('/','-')}" order by itbi.cod_itbi`; break;
         case 'cod_itbi': CONDICAO = `itbi.cod_itbi = ${text1}`; break;
-        case 'inscricao': CONDICAO = `itbi.inscricao like "%${text1}%" order by itbi.cod_itbi desc limit ${limit_rows}`; break;
-        case 'nome_vendedor': CONDICAO = `itbi.nome_vendedor like '%${text1}%' order by itbi.cod_itbi desc limit ${limit_rows}`; break;
-        case 'nome_comprador': CONDICAO = `itbi.nome_comprador like "%${text1}%" order by itbi.cod_itbi desc limit ${limit_rows}`; break;
-        case 'cpf_cnpj_vendedor': CONDICAO = `itbi.cpf_cnpj_vendedor like "${text1}%" order by itbi.cod_itbi desc limit ${limit_rows}`; break;
-        case 'cpf_cnpj_comprador': CONDICAO = `itbi.cpf_cnpj_comprador like "${text1}%" order by itbi.cod_itbi desc limit ${limit_rows}`; break;
+        case 'inscricao': CONDICAO = `itbi.inscricao like "%${text1}%" order by itbi.cod_itbi`; break;
+        case 'nome_vendedor': CONDICAO = `itbi.nome_vendedor like '%${text1}%' order by itbi.cod_itbi`; break;
+        case 'nome_comprador': CONDICAO = `itbi.nome_comprador like "%${text1}%" order by itbi.cod_itbi`; break;
+        case 'cpf_cnpj_vendedor': CONDICAO = `itbi.cpf_cnpj_vendedor like "${text1}%" order by itbi.cod_itbi`; break;
+        case 'cpf_cnpj_comprador': CONDICAO = `itbi.cpf_cnpj_comprador like "${text1}%" order by itbi.cod_itbi`; break;
+        case '': CONDICAO = `itbi.nome_vendedor like '%${text1}%' order by itbi.cod_itbi`; break;
     }
     if (CONDICAO) {
         let SQL = `select itbi.id_ent, itbi.id_itbi, itbi.cod_itbi, itbi.inscricao, itbi.id_vendedor, itbi.id_comprador, itbi.cpf_cnpj_comprador, itbi.cpf_cnpj_vendedor, itbi.pago,
-        itbi.nome_comprador, itbi.nome_vendedor, itbi.tipo_localizacao, itbi.transferido, itbi.valor_total, itbi.data_cad, itbi.data_emissao,itbi.emissao from itbi where itbi.id_ent = ${id_ent} and ${CONDICAO}`;
+        itbi.nome_comprador, itbi.nome_vendedor, itbi.tipo_localizacao, itbi.transferido, itbi.valor_total, itbi.data_cad, itbi.data_emissao,itbi.emissao from itbi where itbi.id_ent = ${id_ent} and ${CONDICAO} desc limit ${limit_rows}`;
         db.query(SQL, (err, result) => {
             if (err) { res.status(404).json('Dados não Encontrado!') }
             else res.send(result);
@@ -939,6 +963,7 @@ app.delete("/ITBIdel/:id_itbi/:id_user", verify, (req, res) => {
         }
     });
 });
+
 //===========documentos========//
 app.post("/docPost", async (req, res) => {
     let { id_ent, id_pessoa, usu_cad, tipo_doc, cod_verificacao, data_cad, data_emissao, validade, finalidade_doc, id_assin1, id_assin2, id_assin3, num_processo, obs_doc, tipo_cad } = req.body;
@@ -1100,14 +1125,14 @@ app.get("/alvaraId/:id_alvara", async (req, res) => {
 
 });
 app.post("/alvaraPost", async (req, res) => {
-    let { id_ent, id_pessoa, id_user, data_emissao, num_processo, tipo_alvara, data_validade, exercicio, num_dam, obs_alvara,
+    let { id_ent, id_pessoa, id_user, data_emissao,data_cad, num_processo, tipo_alvara, data_validade, exercicio, num_dam, obs_alvara,
         recolhimento, placa, anofabricacao, chassis, cor_veiculo, modelo_veiculo, obs_veiculo, emissao, id_assin1, id_assin2, id_assin3 } = req.body; console.log('22', req.body)
 
     let sql = `select exercicio FROM alvaras WHERE id_pessoa = ${id_pessoa} and exercicio = ${exercicio} and emissao = 'E'`;
     db.query(sql, (err, result) => {
         let resSelc = result.length;
         const selectAlv = () => {
-            let slq2 = `select id_ent,id_alvara,cod_alvara,id_pessoa,id_user,data_emissao,num_processo,tipo_alvara,data_validade,exercicio,num_dam,obs_alvara,recolhimento,placa,anofabricacao,chassis,cor_veiculo,modelo_veiculo,obs_veiculo,emissao,id_assin1,id_assin2,id_assin3 from alvaras where id_pessoa = ${id_pessoa} order by id_alvara desc`;
+            let slq2 = `select id_ent,id_alvara,cod_alvara,id_pessoa,id_user,data_emissao,data_cad,num_processo,tipo_alvara,data_validade,exercicio,num_dam,obs_alvara,recolhimento,placa,anofabricacao,chassis,cor_veiculo,modelo_veiculo,obs_veiculo,emissao,id_assin1,id_assin2,id_assin3 from alvaras where id_pessoa = ${id_pessoa} order by id_alvara desc`;
             db.query(slq2, (err, result) => {
                 if (err) { res.status(404).json('404!') }
                 else {
@@ -1128,9 +1153,9 @@ app.post("/alvaraPost", async (req, res) => {
                 let cod_alvara = result[0].cod_alvara + 1;
                 if (cod_alvara) {
                     if (!num_processo) { num_processo = ("000000" + cod_alvara).slice(-6) + '/' + new Date().getFullYear() }
-                    let sql2 = `insert into alvaras (id_ent,cod_alvara,id_pessoa,id_user,data_emissao,num_processo,tipo_alvara,data_validade,exercicio,num_dam,obs_alvara,
-                        recolhimento,placa,anofabricacao,chassis,cor_veiculo,modelo_veiculo,obs_veiculo,emissao,id_assin1,id_assin2,id_assin3) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-                    db.query(sql2, [id_ent, cod_alvara, id_pessoa, id_user, data_emissao, num_processo, tipo_alvara, data_validade, exercicio, num_dam, obs_alvara,
+                    let sql2 = `insert into alvaras (id_ent,cod_alvara,id_pessoa,id_user,data_emissao,data_cad,num_processo,tipo_alvara,data_validade,exercicio,num_dam,obs_alvara,
+                        recolhimento,placa,anofabricacao,chassis,cor_veiculo,modelo_veiculo,obs_veiculo,emissao,id_assin1,id_assin2,id_assin3) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+                    db.query(sql2, [id_ent, cod_alvara, id_pessoa, id_user, data_emissao.split('/').reverse().join('-'),data_cad, num_processo, tipo_alvara, data_validade, exercicio, num_dam, obs_alvara,
                         recolhimento, placa, anofabricacao, chassis, cor_veiculo, modelo_veiculo, obs_veiculo, emissao, id_assin1, id_assin2, id_assin3], (err1, result) => {
                             if (err1) { res.status(404).json('404!'), console.log(err1) }
                             else {
@@ -1211,8 +1236,7 @@ app.post("/assinaturas/", verify, async (req, res) => {
     //const { id_user } = req.params; 
     const { id_ent, nome, cargo, matricula, obs_assin } = req.body;;
     let data_cad = new Date().toLocaleDateString('pt-br');
-    let ativo = 'N';
-
+    let ativo = 'S';
     let SQLL = "insert into assinaturas (id_ent, nome, cargo, matricula, ativo,obs_assin ) values (?,?,?,?,?,?)";
     db.query(SQLL, [id_ent, nome, cargo, matricula, ativo, obs_assin, data_cad], (err1, result) => {
         if (err1) { res.status(404).json('404!5'), console.log(err1) }
@@ -1233,6 +1257,14 @@ app.put("/assinaturas", verify, async (req, res) => {
 app.get("/assinaturas/:id_ent", verify, (req, res) => {
     const { id_ent } = req.params;
     let SQL = `select * from assinaturas where id_ent = ${id_ent} order by data_cad desc`;
+    db.query(SQL, (err, result) => {
+        if (err) { res.status(404).json('404!') }
+        else { res.send(result); }
+    });
+});
+app.get("/assin_Ativo/:id_ent", verify, (req, res) => {
+    const { id_ent } = req.params;
+    let SQL = `select * from assinaturas where id_ent = ${id_ent} and ativo = 'S' order by nome`;
     db.query(SQL, (err, result) => {
         if (err) { res.status(404).json('404!') }
         else { res.send(result); }
@@ -1459,7 +1491,8 @@ app.post("/dividas", async (req, res) => {
                                     let SQL2 = "insert into dividas (id_ent, cod_divida, exercicio,inscricao,id_imovel, valor_original, valor_juros,valor_multa,valor_corr,desconto, valor_total, sobjudice, parcelado,pago,nossonum,id_user) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
                                     db.query(SQL2, [id_ent, cod_divida, exercicio, inscricao, id_imovel, valor_original, valor_juros, valor_multa, valor_corr, desconto, valor_total, sobjudice, parcelado, pago, nossonum, id_user], (err1, result0) => {
                                         if (err1) { res.status(404).json('Erro ao Salvar!'), console.log(err1) }
-                                        else {   res.status(201).json({ id_imovel, msg: 'Incluida com sucesso!' })
+                                        else {
+                                            res.status(201).json({ id_imovel, msg: 'Incluida com sucesso!' })
                                         }
                                     });
                                 }
@@ -1703,7 +1736,7 @@ app.put("/descontoDivida/:id_imovel/:aliq_desconto", verify, async (req, res) =>
 //===========receitas========//
 app.get("/receitas/:id_ent", verify, (req, res) => {
     const { id_ent } = req.params;
-    let SQL = `select id_ent, id_rec, id_user, cod_rec, grupo,des_rec,cod_orc,cod_trib,cod_fonte,valor,obs,aliq,situacao,usu_cad, data_cad from receitas where id_ent = ${id_ent} order by cod_rec`;
+    let SQL = `select id_ent, id_rec, id_user, cod_rec, grupo,des_rec,cod_orc,cod_trib,cod_fonte,valor,obs,aliq,situacao,usu_cad,data_cad from receitas where id_ent = ${id_ent} order by cod_rec`;
     db.query(SQL, (err, result) => {
         if (err) { res.status(404).json('404!') }
         else { res.send(result); }
@@ -1711,7 +1744,7 @@ app.get("/receitas/:id_ent", verify, (req, res) => {
 });
 app.get("/recAtivas/:id_ent/:grp", verify, (req, res) => {
     const { id_ent, grp } = req.params;
-    let SQL = `select id_rec, cod_rec, des_rec,valor from receitas where id_ent = ${id_ent} and grupo = ${grp} and situacao = 1 order by cod_rec`;
+    let SQL = `select id_rec, cod_rec, des_rec,valor from receitas where id_ent = ${id_ent} and grupo = ${grp} and situacao = 1 order by des_rec`;
     db.query(SQL, (err, result) => {
         if (err) { res.status(404).json('404!') }
         else { res.send(result); }
@@ -1721,7 +1754,6 @@ app.get("/receitaId/:id_rec", verify, (req, res) => {
     const { id_rec } = req.params;
     let SQL = `select id_ent, id_rec, id_user, cod_rec, grupo,des_rec,cod_orc,cod_trib,cod_fonte,valor,obs,aliq,situacao,usu_cad, data_cad from receitas where id_rec = ${id_rec}`;
     db.query(SQL, (err, result) => {
-        console.log(SQL)
         if (err) { res.status(404).json('404!') }
         else { res.status(200).json({ result }); }
     });
@@ -1792,62 +1824,122 @@ app.delete("/delRec/:id_rec/:id_user", verify, (req, res) => {
         }
     });
 });
-//===========lancmto========//
+//===========lancmtos========//
+//ATENÇÃO! SE A CHAMADA FICAR LENTA, REMOVER ESSES DOIS DELETES COMEÇO DA CONSULTA.
 //retorna todos os lançamentos da pessoa pelo ID, antes se faz um delete em lançamentos imcompletos.
 app.get('/lancmtosAll/:id_pessoa', async (req, res) => {
     const { id_pessoa } = req.params;
     let delLancDt = `delete from lancmtos_detalhado where lancmtos_detalhado.cod_lancdet in (
         select lancmtos.id_lanc from lancmtos where lancmtos.nossonum is null and lancmtos.id_pessoa = ${id_pessoa})`;
     db.query(delLancDt, (err, resultt) => {
-        if (err) { console.log('1', err) } else { 
-        let delLanc = `delete from lancmtos where lancmtos.nossonum is null and lancmtos.id_pessoa = ${id_pessoa}`;
-        db.query(delLanc, () => {
+        if (err) { console.log('1', err) } else {
+            let delLanc = `delete from lancmtos where lancmtos.nossonum is null and lancmtos.id_pessoa = ${id_pessoa}`;
+            db.query(delLanc, () => {
 
-            let sqlLanc = `select lancmtos.id_lanc,lancmtos.cod_lanc, lancmtos.id_pessoa, lancmtos.cod_rec, receitas.des_rec, lancmtos.data_lanc,lancmtos.valor_real,lancmtos.valor_rec,
+                let sqlLanc = `select lancmtos.id_lanc,lancmtos.cod_lanc, lancmtos.id_pessoa, lancmtos.cod_rec, receitas.des_rec, lancmtos.data_lanc,lancmtos.valor_real,lancmtos.valor_rec,
     lancmtos.data_venc,lancmtos.pago,lancmtos.data_pgmto,lancmtos.data_venc, lancmtos.situacao from lancmtos 
-    left join receitas on lancmtos.id_rec = receitas.id_rec where lancmtos.id_pessoa = ${id_pessoa} order by lancmtos.id_lanc desc`;
-            db.query(sqlLanc, (err, boletos) => {
-                if (err) { res.status(404).json('404!2') }
-                else { res.set({ boletos }); }
-
-                let Sqldt = `select lancmtos_detalhado.id_lancdet,lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.cod_rec,receitas.des_rec, lancmtos_detalhado.valor_real from lancmtos_detalhado 
-        left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec where lancmtos_detalhado.id_pessoa = ${id_pessoa}  order by lancmtos_detalhado.valor_real asc`;
-                db.query(Sqldt, (err, lanc_Dt) => {
+    left join receitas on lancmtos.id_rec = receitas.id_rec where lancmtos.id_pessoa = ${id_pessoa}`;
+                db.query(sqlLanc, (err, boletos) => {
                     if (err) { res.status(404).json('404!2') }
-                    else { res.set({ lanc_Dt }); }
+                    else { res.set({ boletos }); }
 
-                    const sortKey = "id_lanc";
-                    boletos.sort((a, b) => {
-                        if (a[sortKey] < b[sortKey]) {
-                            return -1;
-                        }
-                        if (a[sortKey] > b[sortKey]) {
-                            return 1;
-                        }
-                        return 0;
-                    })
-                    let lanc_Map = boletos.reduce((map, row) => {
-                        key = row["id_lanc"];
-                        map[key] = row;
-                        return map;
-                    }, {})
+                    let Sqldt = `select lancmtos_detalhado.id_lancdet,lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.cod_rec,receitas.des_rec, lancmtos_detalhado.valor_real from lancmtos_detalhado 
+        left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec where lancmtos_detalhado.id_pessoa = ${id_pessoa}`;
+                    db.query(Sqldt, (err, lanc_Dt) => {
+                        if (err) { res.status(404).json('404!2') }
+                        else { res.set({ lanc_Dt }); }
 
-                    let resultMap = lanc_Dt.reduce((map, row) => {
-                        let key = row["cod_lancdet"];
-                        if (map[key]) {
-                            if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
-                            map[key].lancmtosDt.push(row);
-                        }
-                        return map;
-                    }, lanc_Map)
+                        const sortKey = "id_lanc";
+                        boletos.sort((a, b) => {
+                            if (a[sortKey] < b[sortKey]) {
+                                return -1;
+                            }
+                            if (a[sortKey] > b[sortKey]) {
+                                return 1;
+                            }
+                            return 0;
+                        })
+                        let lanc_Map = boletos.reduce((map, row) => {
+                            key = row["id_lanc"];
+                            map[key] = row;
+                            return map;
+                        }, {})
 
-                    let result = Object.values(resultMap);
-                    res.status(200).json({ result });
+                        let resultMap = lanc_Dt.reduce((map, row) => {
+                            let key = row["cod_lancdet"];
+                            if (map[key]) {
+                                if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
+                                map[key].lancmtosDt.push(row);
+                            }
+                            return map;
+                        }, lanc_Map)
+
+                        let result = Object.values(resultMap);
+                        res.status(200).json({ result });
+                    });
                 });
             });
-        });
- }
- }); 
+        }
+    });
+});
+
+//Chamada para listar lançamentos dos tumulos
+app.get('/lancmtosAllTum/:id_pessoa', async (req, res) => {
+    const { id_pessoa } = req.params;
+    let delLancDt = `delete from lancmtos_detalhado where lancmtos_detalhado.cod_lancdet in (
+        select lancmtos.id_lanc from lancmtos where lancmtos.nossonum is null and lancmtos.id_pessoa = ${id_pessoa})`;
+    db.query(delLancDt, (err, resultt) => {
+        if (err) { console.log('1', err) } else {
+            let delLanc = `delete from lancmtos where lancmtos.nossonum is null and lancmtos.id_pessoa = ${id_pessoa}`;
+            db.query(delLanc, () => {
+
+                let sqlLanc = `select lancmtos.id_lanc,lancmtos.cod_lanc, lancmtos.id_pessoa, lancmtos.cod_rec,lancmtos.desc_lanc, receitas.des_rec, lancmtos.data_lanc,lancmtos.valor_real,lancmtos.valor_rec,
+    lancmtos.data_venc,lancmtos.pago,lancmtos.data_pgmto,lancmtos.data_venc, lancmtos.situacao from lancmtos 
+    left join receitas on lancmtos.id_rec = receitas.id_rec where lancmtos.id_pessoa = ${id_pessoa}`;
+                db.query(sqlLanc, (err, boletos) => {
+                    if (err) { res.status(404).json('404!2') }
+                    else { res.set({ boletos }); }
+
+                    let Sqldt = `select lancmtos_detalhado.id_lancdet,lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.cod_rec,receitas.des_rec, lancmtos_detalhado.valor_real 
+                    from lancmtos_detalhado 
+        left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec where lancmtos_detalhado.id_pessoa = ${id_pessoa}`;
+                    db.query(Sqldt, (err, lanc_Dt) => {
+                        if (err) { res.status(404).json('404!2') }
+                        else { res.set({ lanc_Dt }); }
+
+                        const sortKey = "id_lanc";
+                        boletos.sort((a, b) => {
+                            if (a[sortKey] < b[sortKey]) {
+                                return -1;
+                            }
+                            if (a[sortKey] > b[sortKey]) {
+                                return 1;
+                            }
+                            return 0;
+                        })
+                        let lanc_Map = boletos.reduce((map, row) => {
+                            key = row["id_lanc"];
+                            map[key] = row;
+                            return map;
+                        }, {})
+
+                        let resultMap = lanc_Dt.reduce((map, row) => {
+                            let key = row["cod_lancdet"];
+                            if (map[key]) {
+                                if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
+                                map[key].lancmtosDt.push(row);
+                            }
+                            return map;
+                        }, lanc_Map)
+
+                        let result = Object.values(resultMap);
+                        res.status(200).json({ result });
+                    });
+                });
+            });
+        }
+    });
+        
 });
 
 app.get('/lancmtoIdAlt/:id_lanc', async (req, res) => {
@@ -1950,7 +2042,7 @@ app.get('/lancmtoId/:id_lanc', async (req, res) => {
 
 //Relatorios
 app.post('/recebimentos', async (req, res) => {
-    let { id_ent, op_periodo,op_data,op_receb, op_tipocad, text1, text2,id_pessoa,id_rec } = req.body; console.log('reqBody',req.body)
+    let { id_ent, op_periodo, op_data, op_receb, op_tipocad, text1, text2, id_pessoa, id_rec } = req.body; console.log('reqBody', req.body)
     let CONDICAO = '';
     let CONDICAO2 = '';
     let CONDICAO3 = '';
@@ -1961,19 +2053,19 @@ app.post('/recebimentos', async (req, res) => {
     if (text1 === '*') { text1 = ''; text2 = '' }
 
     if (id_pessoa) {
-        CONDICAO = `lancmtos.id_pessoa = '${id_pessoa}'`; console.log(CONDICAO)
-    }else{
-        CONDICAO = `lancmtos.id_pessoa > 1`; console.log(CONDICAO)
+        CONDICAO = `lancmtos.id_pessoa = '${id_pessoa}'`;
+    } else {
+        CONDICAO = `lancmtos.id_pessoa > 1`;
     }
-    if (id_rec) {
-        CONDICAO2 = `lancmtos.id_rec = '${id_rec}'`; console.log(CONDICAO2)
-    }else{
-        CONDICAO2 = `lancmtos.id_rec > 1`; console.log(CONDICAO2)
-    }  
+      if (id_rec === '0' ) {
+        CONDICAO2 = `lancmtos.id_rec > 1`;
+    } else {
+        CONDICAO2 = `lancmtos.id_rec = '${id_rec}'`;
+    }
     switch (op_periodo) {
-        case '1': CONDICAO3 = `lancmtos.${op_data} = '${text1.split('-').reverse().join('/')}'`; break;
-        case '2': CONDICAO3 = `lancmtos.${op_data} between "${text1.split('-').reverse().join('/')}" and "${text2.split('-').reverse().join('/')}"`; break;        
-        case '3': CONDICAO3 = `lancmtos.exercicio = '${text1}'`; console.log(CONDICAO3); break;
+        case '1': CONDICAO3 = `lancmtos.${op_data} = '${text1.replace('/','-')}'`; break;
+        case '2': CONDICAO3 = `lancmtos.${op_data} between "${text1.replace('/','-')}" and "${text2.replace('/','-')}"`; break;
+        case '3': CONDICAO3 = `lancmtos.exercicio = '${text1}'`; break;
     }
     switch (op_receb) {
         case 'M': CONDICAO4 = `lancmtos.tipo_baixa = '000'`; break;
@@ -1983,26 +2075,26 @@ app.post('/recebimentos', async (req, res) => {
     switch (op_tipocad) {
         case 'C': CONDICAO6 = `pessoas.tipocad = 'C'`; break;
         case 'E': CONDICAO6 = `pessoas.tipocad = 'E'`; break;
-        case 'T': CONDICAO6 = `pessoas.tipocad in ('C','E')`; console.log(CONDICAO5); break;
-    } 
- 
-        SQL = `select lancmtos.id_lanc,lancmtos.cod_lanc, lancmtos.id_pessoa, lancmtos.cod_rec, receitas.des_rec, lancmtos.data_lanc,lancmtos.valor_real,lancmtos.valor_taxa,lancmtos.valor_rec,
+        case 'T': CONDICAO6 = `pessoas.tipocad in ('C','E')`; break;
+    }
+
+    SQL = `select lancmtos.id_lanc,lancmtos.cod_lanc, lancmtos.id_pessoa, lancmtos.cod_rec, receitas.des_rec, lancmtos.data_lanc,lancmtos.valor_real,lancmtos.valor_taxa,lancmtos.valor_rec,
     lancmtos.data_venc,lancmtos.pago,lancmtos.data_pgmto,lancmtos.data_cred, lancmtos.situacao,lancmtos.exercicio,lancmtos.cod_insc, pessoas.id_pessoa,pessoas.tipocad, pessoas.id_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj from lancmtos 
     left join pessoas on lancmtos.id_pessoa = pessoas.id_pessoa 
     left join receitas on lancmtos.id_rec = receitas.id_rec 
     where lancmtos.id_ent = ${id_ent} and lancmtos.situacao = 'E' and ${CONDICAO6} and ${CONDICAO} and ${CONDICAO2} and ${CONDICAO3} and ${CONDICAO4} and lancmtos.pago = 'S' order by lancmtos.data_pgmto asc`;
-        db.query(SQL, (err, result) => { console.log('SQL:',SQL)
-            if (err) { res.status(404).json('404!');}
-            else {res.send(result)}
-        });
+    db.query(SQL, (err, result) => {
+        console.log('SQL:', SQL)
+        if (err) { res.status(404).json('404!'); }
+        else { res.send(result) }
+    });
 });
 
 //relação de dams emitidos
 app.post('/lancmtosAll', async (req, res) => {
-    let { id_ent, op_periodo,op_data,op_pago,op_receb, op_tipocad, text1, text2,id_pessoa,id_rec } = req.body; console.log('reqBody',req.body)
+    let { id_ent, op_pago, op_receb, op_tipocad, text1, text2, id_pessoa, id_rec } = req.body; console.log('reqBody', req.body)
     let CONDICAO = '';
     let CONDICAO2 = '';
-    let CONDICAO3 = '';
     let CONDICAO4 = '';
     let CONDICAO5 = '';
     let CONDICAO6 = '';
@@ -2010,360 +2102,311 @@ app.post('/lancmtosAll', async (req, res) => {
     if (text1 === '*') { text1 = ''; text2 = '' }
 
     if (id_pessoa) {
-        CONDICAO = `lancmtos.id_pessoa = '${id_pessoa}'`; console.log(CONDICAO)
-    }else{
-        CONDICAO = `lancmtos.id_pessoa > 1`; console.log(CONDICAO)
+        CONDICAO = `lancmtos.id_pessoa = '${id_pessoa}'`;
+    } else {
+        CONDICAO = `lancmtos.id_pessoa > 1`;
     }
-    if (id_rec) {
-        CONDICAO2 = `lancmtos.id_rec = '${id_rec}'`; console.log(CONDICAO2)
-    }else{
-        CONDICAO2 = `lancmtos.id_rec > 1`; console.log(CONDICAO2)
-    }  
-    switch (op_periodo) {
-        case '1': CONDICAO3 = `lancmtos.${op_data} = '${text1.split('-').reverse().join('/')}'`; break;
-        case '2': CONDICAO3 = `lancmtos.${op_data} between "${text1.split('-').reverse().join('/')}" and "${text2.split('-').reverse().join('/')}"`; break;        
-        case '3': CONDICAO3 = `lancmtos.exercicio = '${text1}'`; console.log(CONDICAO3); break;
+    if (id_rec === '0' ) {
+        CONDICAO2 = `lancmtos.id_rec > 1`;
+    } else {
+        CONDICAO2 = `lancmtos.id_rec = '${id_rec}'`;        
     }
     switch (op_receb) {
         case 'M': CONDICAO4 = `lancmtos.tipo_baixa = '000'`; break;
         case 'B': CONDICAO4 = `lancmtos.tipo_baixa != '000'`; break;
-        case 'T': CONDICAO4 = `char(lancmtos.tipo_baixa) >= ''`; console.log(CONDICAO4); break;
-    } 
+        case 'T': CONDICAO4 = `char(lancmtos.tipo_baixa) >= ''`; break;
+    }
     switch (op_pago) {
         case 'S': CONDICAO5 = `lancmtos.pago = 'S'`; break;
         case 'N': CONDICAO5 = `lancmtos.pago = 'N'`; break;
-        case 'T': CONDICAO5 = `lancmtos.pago in ('S','N')`; console.log(CONDICAO5); break;
-    } 
+        case 'T': CONDICAO5 = `lancmtos.pago in ('S','N')`; break;
+    }
     switch (op_tipocad) {
         case 'C': CONDICAO6 = `pessoas.tipocad = 'C'`; break;
         case 'E': CONDICAO6 = `pessoas.tipocad = 'E'`; break;
-        case 'T': CONDICAO6 = `pessoas.tipocad in ('C','E')`; console.log(CONDICAO5); break;
-    } 
- 
-        SQL = `select lancmtos.id_lanc,lancmtos.cod_lanc, lancmtos.id_pessoa, lancmtos.cod_rec, receitas.des_rec, lancmtos.data_lanc,lancmtos.valor_real,lancmtos.valor_taxa,lancmtos.valor_rec,
+        case 'T': CONDICAO6 = `pessoas.tipocad in ('C','E')`; break;
+    }
+
+    SQL = `select lancmtos.id_lanc,lancmtos.cod_lanc, lancmtos.id_pessoa, lancmtos.cod_rec, receitas.des_rec, lancmtos.data_lanc,lancmtos.valor_real,lancmtos.valor_taxa,lancmtos.valor_rec,
     lancmtos.data_venc,lancmtos.pago,lancmtos.data_pgmto,lancmtos.data_cred, lancmtos.situacao,lancmtos.exercicio,lancmtos.cod_insc, pessoas.id_pessoa,pessoas.tipocad, pessoas.id_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj from lancmtos 
     left join pessoas on lancmtos.id_pessoa = pessoas.id_pessoa 
     left join receitas on lancmtos.id_rec = receitas.id_rec 
-    where lancmtos.id_ent = ${id_ent} and ${CONDICAO6} and ${CONDICAO} and ${CONDICAO2} and ${CONDICAO3} and ${CONDICAO4} and ${CONDICAO5} 
-    order by lancmtos.data_pgmto asc`;
-        db.query(SQL, (err, result) => {
-            if (err) { res.status(404).json('404!');}
-            else {res.send(result)}
-        });
+    where lancmtos.id_ent = ${id_ent} and ${CONDICAO6} and ${CONDICAO} and ${CONDICAO2} and ${CONDICAO4} and ${CONDICAO5}
+    order by lancmtos.cod_lanc asc`;  console.log(SQL);
+    db.query(SQL, (err, result) => {
+        if (err) { res.status(404).json('Sem Dados!!'); }
+        else { res.send(result) }
+    });
 });
 
 //lançamentos por receita
 app.get('/lancmtosRecId/:id_rec', async (req, res) => {
-        const { id_rec } = req.params;
-                let sqlLanc = `select lancmtos.id_lanc,lancmtos.id_rec,lancmtos.id_pessoa, lancmtos.cod_rec, receitas.id_rec,receitas.des_rec from lancmtos 
+    const { id_rec } = req.params;
+    let sqlLanc = `select lancmtos.id_lanc,lancmtos.id_rec,lancmtos.id_pessoa, lancmtos.cod_rec, receitas.id_rec,receitas.des_rec from lancmtos 
         left join receitas on lancmtos.id_rec = receitas.id_rec 
         where 
         receitas.id_rec = ${id_rec} group by receitas.des_rec`;
-                db.query(sqlLanc, (err, boletos) => {
-                    if (err) { res.status(404).json('404!2') }
-                    else { res.set({ boletos }); }
-    
-                    let Sqldt = `select 
+    db.query(sqlLanc, (err, boletos) => {
+        if (err) { res.status(404).json('404!2') }
+        else { res.set({ boletos }); }
+
+        let Sqldt = `select 
                     lancmtos_detalhado.id_lancdet,lancmtos_detalhado.cod_lancdet,lancmtos_detalhado.id_rec, pessoas.nome_pessoa, lancmtos_detalhado.cod_rec,receitas.des_rec, lancmtos_detalhado.valor_real 
                     from lancmtos_detalhado 
             left join pessoas on lancmtos_detalhado.id_pessoa = pessoas.id_pessoa
             left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec
             order by lancmtos_detalhado.data_lanc asc`;
-                    db.query(Sqldt, (err, lanc_Dt) => {
-                        if (err) { res.status(404).json('404!2') }
-                        else { res.set({ lanc_Dt }); }
-    
-                        const sortKey = "id_rec";
-                        boletos.sort((a, b) => {
-                            if (a[sortKey] < b[sortKey]) {
-                                return -1;
-                            }
-                            if (a[sortKey] > b[sortKey]) {
-                                return 1;
-                            }
-                            return 0;
-                        })
-                        let lanc_Map = boletos.reduce((map, row) => {
-                            key = row["id_rec"];
-                            map[key] = row;
-                            return map;
-                        }, {})
-    
-                        let resultMap = lanc_Dt.reduce((map, row) => {
-                            let key = row["id_rec"];
-                            if (map[key]) {
-                                if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
-                                map[key].lancmtosDt.push(row);
-                            }
-                            return map;
-                        }, lanc_Map)
-    
-                        let result = Object.values(resultMap);
-                        res.status(200).json({ result });
-                    });
-     }); 
-    });  
-       
-    app.get('/lancmtosRecAll_2/:id_ent', async (req, res) => {
-        const { id_ent } = req.params;
-        let sqlLanc = `select lancmtos.id_lanc,lancmtos.id_rec,lancmtos.id_pessoa, lancmtos.cod_rec, receitas.id_rec,receitas.des_rec from lancmtos 
+        db.query(Sqldt, (err, lanc_Dt) => {
+            if (err) { res.status(404).json('404!2') }
+            else { res.set({ lanc_Dt }); }
+
+            const sortKey = "id_rec";
+            boletos.sort((a, b) => {
+                if (a[sortKey] < b[sortKey]) {
+                    return -1;
+                }
+                if (a[sortKey] > b[sortKey]) {
+                    return 1;
+                }
+                return 0;
+            })
+            let lanc_Map = boletos.reduce((map, row) => {
+                key = row["id_rec"];
+                map[key] = row;
+                return map;
+            }, {})
+
+            let resultMap = lanc_Dt.reduce((map, row) => {
+                let key = row["id_rec"];
+                if (map[key]) {
+                    if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
+                    map[key].lancmtosDt.push(row);
+                }
+                return map;
+            }, lanc_Map)
+
+            let result = Object.values(resultMap);
+            res.status(200).json({ result });
+        });
+    });
+});
+
+app.get('/lancmtosRecAll_2/:id_ent', async (req, res) => {
+    const { id_ent } = req.params;
+    let sqlLanc = `select lancmtos.id_lanc,lancmtos.id_rec,lancmtos.id_pessoa, lancmtos.cod_rec, receitas.id_rec,receitas.des_rec from lancmtos 
         left join receitas on lancmtos.id_rec = receitas.id_rec 
         where 
         lancmtos.id_ent = ${id_ent} group by receitas.id_rec`;
-                db.query(sqlLanc, (err, boletos) => {
-                    if (err) { res.status(404).json('404!2') }
-                    else { res.set({ boletos }); }
-    
-                    let Sqldt = `select 
+    db.query(sqlLanc, (err, boletos) => {
+        if (err) { res.status(404).json('404!2') }
+        else { res.set({ boletos }); }
+
+        let Sqldt = `select 
                     lancmtos_detalhado.id_lancdet,lancmtos_detalhado.cod_lancdet,lancmtos_detalhado.id_rec, pessoas.nome_pessoa, lancmtos_detalhado.cod_rec,receitas.des_rec, 
                     lancmtos_detalhado.valor_real,lancmtos_detalhado.valor_rec
                     from lancmtos_detalhado 
             left join pessoas on lancmtos_detalhado.id_pessoa = pessoas.id_pessoa
             left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec order by lancmtos_detalhado.data_lanc`;
-                    db.query(Sqldt, (err, lanc_Dt) => {
-                        if (err) { res.status(404).json('404!2') }
-                        else { res.set({ lanc_Dt }); }
-    
-                        const sortKey = "id_rec";
-                        boletos.sort((a, b) => {
-                            if (a[sortKey] < b[sortKey]) {
-                                return -1;
-                            }
-                            if (a[sortKey] > b[sortKey]) {
-                                return 1;
-                            }
-                            return 0;
-                        })
-                        let lanc_Map = boletos.reduce((map, row) => {
-                            key = row["id_rec"];
-                            map[key] = row;
-                            return map;
-                        }, {})
-    
-                        let resultMap = lanc_Dt.reduce((map, row) => {
-                            let key = row["id_rec"];
-                            if (map[key]) {
-                                if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
-                                map[key].lancmtosDt.push(row);
-                            }
-                            return map;
-                        }, lanc_Map)
-    
-                        let result = Object.values(resultMap);
-                        res.status(200).json({ result });
-                    });
-     }); 
-    });   
-    app.post('/recebimentos_det/', async (req, res) => {
-      //  const { id_ent } = req.params;
+        db.query(Sqldt, (err, lanc_Dt) => {
+            if (err) { res.status(404).json('404!2') }
+            else { res.set({ lanc_Dt }); }
 
-        let { id_ent, op_periodo,op_data,op_pago,op_receb, op_tipocad, text1, text2,id_pessoa,id_rec } = req.body; console.log('reqBody',req.body)
-        // let CONDICAO = '';
-        // let CONDICAO2 = '';
-        // let CONDICAO3 = '';
-        // let CONDICAO4 = '';
-        // let CONDICAO5 = '';
-        // let CONDICAO6 = '';
-    
-        // if (text1 === '*') { text1 = ''; text2 = '' }
-    
-        // if (id_pessoa) {
-        //     CONDICAO = `lancmtos.id_pessoa = '${id_pessoa}'`; console.log(CONDICAO)
-        // }else{
-        //     CONDICAO = `lancmtos.id_pessoa > 1`; console.log(CONDICAO)
-        // }
-        // if (id_rec) {
-        //     CONDICAO2 = `lancmtos.id_rec = '${id_rec}'`; console.log(CONDICAO2)
-        // }else{
-        //     CONDICAO2 = `lancmtos.id_rec > 1`; console.log(CONDICAO2)
-        // }  
-        // switch (op_periodo) {
-        //     case '1': CONDICAO3 = `lancmtos.${op_data} = '${text1.split('-').reverse().join('/')}'`; break;
-        //     case '2': CONDICAO3 = `lancmtos.${op_data} between "${text1.split('-').reverse().join('/')}" and "${text2.split('-').reverse().join('/')}"`; break;        
-        //     case '3': CONDICAO3 = `lancmtos.exercicio = '${text1}'`; console.log(CONDICAO3); break;
-        // }
-        // switch (op_receb) {
-        //     case 'M': CONDICAO4 = `lancmtos.tipo_baixa = '000'`; break;
-        //     case 'B': CONDICAO4 = `lancmtos.tipo_baixa != '000'`; break;
-        //     case 'T': CONDICAO4 = `char(lancmtos.tipo_baixa) >= ''`; console.log(CONDICAO4); break;
-        // } 
-        // switch (op_pago) {
-        //     case 'S': CONDICAO5 = `lancmtos.pago = 'S'`; break;
-        //     case 'N': CONDICAO5 = `lancmtos.pago = 'N'`; break;
-        //     case 'T': CONDICAO5 = `lancmtos.pago in ('S','N')`; console.log(CONDICAO5); break;
-        // } 
-        // switch (op_tipocad) {
-        //     case 'C': CONDICAO6 = `pessoas.tipocad = 'C'`; break;
-        //     case 'E': CONDICAO6 = `pessoas.tipocad = 'E'`; break;
-        //     case 'T': CONDICAO6 = `pessoas.tipocad in ('C','E')`; console.log(CONDICAO5); break;
-        // } 
+            const sortKey = "id_rec";
+            boletos.sort((a, b) => {
+                if (a[sortKey] < b[sortKey]) {
+                    return -1;
+                }
+                if (a[sortKey] > b[sortKey]) {
+                    return 1;
+                }
+                return 0;
+            })
+            let lanc_Map = boletos.reduce((map, row) => {
+                key = row["id_rec"];
+                map[key] = row;
+                return map;
+            }, {})
 
-        // let sqlLanc = `select lancmtos.id_lanc, lancmtos.id_rec,lancmtos.id_pessoa, lancmtos.cod_rec, receitas.id_rec,receitas.des_rec, receitas.cod_orc from lancmtos 
-        // left join receitas on lancmtos.id_rec = receitas.id_rec 
-        // where lancmtos.id_ent = ${id_ent} group by receitas.id_rec`;
+            let resultMap = lanc_Dt.reduce((map, row) => {
+                let key = row["id_rec"];
+                if (map[key]) {
+                    if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
+                    map[key].lancmtosDt.push(row);
+                }
+                return map;
+            }, lanc_Map)
 
-        let sqlLanc = `select receitas.id_rec,receitas.cod_rec,receitas.des_rec, receitas.cod_orc,sum(
-        select lancmtos_detalhado.valor_real from lancmtos_detalhado where lancmtos_detalhado.id_ent = ${id_ent} and lancmtos_detalhado.pago = 'N') as total2 from receitas 
-        where receitas.cod_rec in (select lancmtos_detalhado.cod_rec from lancmtos_detalhado where lancmtos_detalhado.id_ent = ${id_ent} and lancmtos_detalhado.pago = 'N') 
-        and receitas.id_ent = ${id_ent} group by receitas.id_rec`;
-                db.query(sqlLanc, (err, boletos) => {
-                    if (err) { res.status(404).json('404!2') }
-                    else { res.set({ boletos }); }
+            let result = Object.values(resultMap);
+            res.status(200).json({ result });
+        });
+    });
+});
+app.post('/recebimentos_det/', async (req, res) => {
+    let { id_ent, op_periodo, op_data, op_pago, op_receb, op_tipocad, text1, text2, id_pessoa, id_rec } = req.body;
+    let CONDICAO = '';
+    let CONDICAO2 = '';
+    let CONDICAO3 = '';
+    let CONDICAO4 = '';
+    let CONDICAO5 = '';
+    let CONDICAO6 = '';
+
+    if (text1 === '*') { text1 = ''; text2 = '' }
+
+    if (id_pessoa) {
+        CONDICAO = `and lancmtos_detalhado.id_pessoa = '${id_pessoa}'`;
+    }else{
+        CONDICAO = `and lancmtos_detalhado.id_pessoa > 1`;
+    }
+    if (id_rec === '0' ) {
+        CONDICAO2 = `and lancmtos_detalhado.id_rec > 1`;
+    }else{
+        CONDICAO2 = `and lancmtos_detalhado.id_rec = '${id_rec}'`;        
+    }  
+    switch (op_periodo) {
+        case '1': CONDICAO3 = `and lancmtos_detalhado.${op_data} = '${text1.replace('/','-')}'`; break;
+        case '2': CONDICAO3 = `and lancmtos_detalhado.${op_data} between "${text1.replace('/','-')}" and "${text2.replace('/','-')}"`; break;        
+        case '3': CONDICAO3 = `and lancmtos_detalhado.exercicio = '${text1}'`; break;
+    }
+    switch (op_receb) {
+        case 'M': CONDICAO4 = `and lancmtos_detalhado.tipo_baixa = '000'`; break;
+        case 'B': CONDICAO4 = `and lancmtos_detalhado.tipo_baixa != '000'`; break;
+        case 'T': CONDICAO4 = `and char(lancmtos_detalhado.tipo_baixa) >= ''`; break;
+    } 
+    switch (op_pago) {
+        case 'S': CONDICAO5 = `and lancmtos_detalhado.pago = 'S'`; break;
+        case 'N': CONDICAO5 = `and lancmtos_detalhado.pago = 'N'`; break;
+        case 'T': CONDICAO5 = `and lancmtos_detalhado.pago in ('S','N')`; break; data_venc
+    } 
+    switch (op_tipocad) {
+        case 'C': CONDICAO6 = `and pessoas.tipocad = 'C'`; break;
+        case 'E': CONDICAO6 = `and pessoas.tipocad = 'E'`; break;
+        case 'T': CONDICAO6 = `and pessoas.tipocad in ('C','E')`; break;
+    } 
+
+    let sqlLanc = `select receitas.id_rec,receitas.cod_rec,receitas.des_rec, receitas.cod_orc,
+                ( select sum(lancmtos_detalhado.valor_real) from lancmtos_detalhado left join pessoas on lancmtos_detalhado.id_pessoa = pessoas.id_pessoa where lancmtos_detalhado.id_ent = ${id_ent} ${CONDICAO} ${CONDICAO2} ${CONDICAO3} ${CONDICAO4} ${CONDICAO6} 
+                and lancmtos_detalhado.pago = 'S' and lancmtos_detalhado.id_rec = receitas.id_rec 
+            ) as total_real,
+                     (select sum(lancmtos_detalhado.valor_taxa) from lancmtos_detalhado left join pessoas on lancmtos_detalhado.id_pessoa = pessoas.id_pessoa where lancmtos_detalhado.id_ent = ${id_ent} ${CONDICAO} ${CONDICAO2} ${CONDICAO3} ${CONDICAO4} ${CONDICAO6} 
+                and lancmtos_detalhado.pago = 'S' and lancmtos_detalhado.id_rec = receitas.id_rec 
+            ) as total_taxa, 
+                (select sum(lancmtos_detalhado.valor_rec) from lancmtos_detalhado left join pessoas on lancmtos_detalhado.id_pessoa = pessoas.id_pessoa where lancmtos_detalhado.id_ent = ${id_ent} ${CONDICAO} ${CONDICAO2} ${CONDICAO3} ${CONDICAO4} ${CONDICAO6} 
+                and lancmtos_detalhado.pago = 'S' and lancmtos_detalhado.id_rec = receitas.id_rec 
+            ) as total_rec
+            from receitas 
+                where receitas.id_rec in (
+
+                    select lancmtos_detalhado.id_rec from lancmtos_detalhado 
+                    left join pessoas on lancmtos_detalhado.id_pessoa = pessoas.id_pessoa
+where lancmtos_detalhado.id_ent = ${id_ent} ${CONDICAO} ${CONDICAO2} ${CONDICAO3} ${CONDICAO4} ${CONDICAO5} ${CONDICAO6} and lancmtos_detalhado.pago = 'S'
+                    and lancmtos_detalhado.id_rec = receitas.id_rec
+                    
+                    ) and receitas.id_ent = ${id_ent} group by receitas.id_rec `;
+    db.query(sqlLanc, (err, boletos) => { console.log(err)
+        if (boletos) { 
+            res.set({ boletos });
 
 
-                    //        select 
-//        lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.id_pessoa, lancmtos_detalhado.cod_rec, receitas.des_rec, lancmtos_detalhado.data_lanc,lancmtos_detalhado.valor_real,lancmtos_detalhado.valor_taxa,lancmtos_detalhado.valor_rec,
-// lancmtos_detalhado.data_venc,lancmtos_detalhado.pago,lancmtos_detalhado.data_pgmto,lancmtos_detalhado.data_cred, lancmtos_detalhado.situacao,lancmtos_detalhado.exercicio,lancmtos_detalhado.cod_insc, 
-// pessoas.id_pessoa,pessoas.tipocad, pessoas.id_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj
-//        from lancmtos_detalhado 
+   let Sqldt = `select 
+        lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.id_pessoa, lancmtos_detalhado.cod_rec, receitas.id_rec, receitas.des_rec,
+        lancmtos_detalhado.valor_real,lancmtos_detalhado.valor_taxa,lancmtos_detalhado.valor_rec,
+        lancmtos_detalhado.pago,lancmtos_detalhado.data_pgmto,lancmtos_detalhado.data_cred,
+ lancmtos_detalhado.situacao,lancmtos_detalhado.exercicio,lancmtos_detalhado.cod_insc, lancmtos_detalhado.numero_proc,
+ pessoas.id_pessoa,pessoas.tipocad, pessoas.id_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj
+        from lancmtos_detalhado 
+        left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec
+        left join pessoas on lancmtos_detalhado.id_pessoa = pessoas.id_pessoa
+ where lancmtos_detalhado.id_ent = ${id_ent} ${CONDICAO} ${CONDICAO2} ${CONDICAO3} ${CONDICAO4} ${CONDICAO5} ${CONDICAO6} and lancmtos_detalhado.pago = 'S'
+     `; 
+     // ${CONDICAO} ${CONDICAO2} ${CONDICAO3} ${CONDICAO4} ${CONDICAO5} ${CONDICAO6}
+    //  order by lancmtos_detalhado.data_pgmto asc
+   
+        db.query(Sqldt, (err, lanc_Dt) => {
+            if (err) { res.status(404).json('404!2'); console.log(err) }
+            else { res.set({ lanc_Dt }); console.log(Sqldt);} 
 
-// where lancmtos.id_ent = ${id_ent} and ${CONDICAO6} and ${CONDICAO} and ${CONDICAO2} and ${CONDICAO3} and ${CONDICAO4} and ${CONDICAO5} 
-//     order by lancmtos.data_pgmto asc
-    
-                    let Sqldt = `select
-                    lancmtos_detalhado.id_lancdet,lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.id_pessoa, lancmtos_detalhado.cod_rec, 
-                    lancmtos_detalhado.valor_real,lancmtos_detalhado.valor_taxa,lancmtos_detalhado.valor_rec,
-                    lancmtos_detalhado.data_venc,lancmtos_detalhado.pago,lancmtos_detalhado.data_pgmto,lancmtos_detalhado.data_cred, lancmtos_detalhado.situacao,
-                    lancmtos_detalhado.exercicio,lancmtos_detalhado.cod_insc, 
-                    pessoas.id_pessoa,pessoas.tipocad, pessoas.id_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj,lancmtos_detalhado.id_rec, pessoas.nome_pessoa, 
-                    lancmtos_detalhado.cod_rec,receitas.des_rec, 
-                    lancmtos_detalhado.valor_real,lancmtos_detalhado.valor_taxa,lancmtos_detalhado.valor_rec
-                    from lancmtos_detalhado 
-            left join pessoas on lancmtos_detalhado.id_pessoa = pessoas.id_pessoa
-            left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec 
-            `;
-                    db.query(Sqldt, (err, lanc_Dt) => {
-                        if (err) { res.status(404).json('404!2') }
-                        else { res.set({ lanc_Dt }); }
-    
-                        const sortKey = "id_rec";
-                        boletos.sort((a, b) => {
-                            if (a[sortKey] < b[sortKey]) {
-                                return -1;
-                            }
-                            if (a[sortKey] > b[sortKey]) {
-                                return 1;
-                            }
-                            return 0;
-                        })
-                        let lanc_Map = boletos.reduce((map, row) => {
-                            key = row["id_rec"];
-                            map[key] = row;
-                            return map;
-                        }, {})
-    
-                        let resultMap = lanc_Dt.reduce((map, row) => {
-                            let key = row["id_rec"];
-                            if (map[key]) {
-                                if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
-                                map[key].lancmtosDt.push(row);
-                            }
-                            return map;
-                        }, lanc_Map)
-    
-                        let result = Object.values(resultMap);console.log({result})
-                        //res.status(200).json({ result });
-                        res.send(result)
-                    });
-     }); 
-    });   
+            const sortKey = "id_rec";
+            boletos.sort((a, b) => {
+                if (a[sortKey] < b[sortKey]) {
+                    return -1;
+                }
+                if (a[sortKey] > b[sortKey]) {
+                    return 1;
+                }
+                return 0;
+            })
+            let lanc_Map = boletos.reduce((map, row) => {
+                key = row["id_rec"];
+                map[key] = row;
+                return map;
+            }, {})
+
+            let resultMap = lanc_Dt.reduce((map, row) => {
+                let key = row["id_rec"];
+                if (map[key]) {
+                    if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
+                    map[key].lancmtosDt.push(row);
+                }
+                return map;
+            }, lanc_Map)
+
+            let result = Object.values(resultMap);
+            //res.status(200).json({ result });
+            res.send(result)
+        });
+    } else { res.status(404).json('404! erro consulta lancmtosDt'); console.log(err)}
+    });
+});
 
 app.get('/lancmtosDetAll', async (req, res) => {
     let { id_ent, campo, text1, text2, limit_rows } = req.body;
     let sqlLanc = `select lancmtos.id_lanc,lancmtos.cod_lanc, lancmtos.id_pessoa, lancmtos.cod_rec, receitas.des_rec, lancmtos.data_lanc,lancmtos.valor_real,lancmtos.valor_rec,
     lancmtos.data_venc,lancmtos.pago,lancmtos.data_pgmto,lancmtos.data_venc, lancmtos.situacao from lancmtos 
-    left join receitas on lancmtos.id_rec = receitas.id_rec where lancmtos.id_ent = ${id_ent} order by lancmtos.data_lanc desc`;
-            db.query(sqlLanc, (err, boletos) => {
-                if (err) { res.status(404).json('404!2') }
-                else { res.set({ boletos }); }
+    left join receitas on lancmtos.id_rec = receitas.id_rec where lancmtos.id_ent = ${id_ent} order by lancmtos.data_cad desc`;
+    db.query(sqlLanc, (err, boletos) => {
+        if (err) { res.status(404).json('404!2') }
+        else { res.set({ boletos }); }
 
-                let Sqldt = `select lancmtos_detalhado.id_lancdet,lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.cod_rec,receitas.des_rec, lancmtos_detalhado.valor_real from lancmtos_detalhado 
-        left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec where lancmtos_detalhado.id_ent = ${id_ent} order by lancmtos_detalhado.data_lanc asc`;
-                db.query(Sqldt, (err, lanc_Dt) => {
-                    if (err) { res.status(404).json('404!2') }
-                    else { res.set({ lanc_Dt }); }
+        let Sqldt = `select lancmtos_detalhado.id_lancdet,lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.cod_rec,receitas.des_rec, lancmtos_detalhado.valor_real from lancmtos_detalhado 
+        left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec where lancmtos_detalhado.id_ent = ${id_ent} order by lancmtos_detalhado.data_cad asc`;
+        db.query(Sqldt, (err, lanc_Dt) => {
+            if (err) { res.status(404).json('404!2') }
+            else { res.set({ lanc_Dt }); }
 
-                    const sortKey = "id_lanc";
-                    boletos.sort((a, b) => {
-                        if (a[sortKey] < b[sortKey]) {
-                            return -1;
-                        }
-                        if (a[sortKey] > b[sortKey]) {
-                            return 1;
-                        }
-                        return 0;
-                    })
-                    let lanc_Map = boletos.reduce((map, row) => {
-                        key = row["id_lanc"];
-                        map[key] = row;
-                        return map;
-                    }, {})
+            const sortKey = "id_lanc";
+            boletos.sort((a, b) => {
+                if (a[sortKey] < b[sortKey]) {
+                    return -1;
+                }
+                if (a[sortKey] > b[sortKey]) {
+                    return 1;
+                }
+                return 0;
+            })
+            let lanc_Map = boletos.reduce((map, row) => {
+                key = row["id_lanc"];
+                map[key] = row;
+                return map;
+            }, {})
 
-                    let resultMap = lanc_Dt.reduce((map, row) => {
-                        let key = row["cod_lancdet"];
-                        if (map[key]) {
-                            if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
-                            map[key].lancmtosDt.push(row);
-                        }
-                        return map;
-                    }, lanc_Map)
+            let resultMap = lanc_Dt.reduce((map, row) => {
+                let key = row["cod_lancdet"];
+                if (map[key]) {
+                    if (!map[key].lancmtosDt) map[key].lancmtosDt = [];
+                    map[key].lancmtosDt.push(row);
+                }
+                return map;
+            }, lanc_Map)
 
-                    let result = Object.values(resultMap);
-                    res.status(200).json({ result });
-                });
-            });
+            let result = Object.values(resultMap);
+            res.status(200).json({ result });
+        });
+    });
 
 });
 
-/*
-app.get('/lancmtoId/:id_lanc', async (req, res) => {
-    const { id_lanc } = req.params;
-    let SQL = `select pessoas.id_pessoa,pessoas.nome_pessoa, pessoas.cpf_cnpj, lancmtos.id_lanc,lancmtos.valor_real,lancmtos.data_lanc,lancmtos.data_venc,lancmtos.desc_lanc,
-        lancmtos.cod_insc,lancmtos.referencia,lancmtos.parc,lancmtos.cod_rec 
-        from lancmtos left join pessoas on lancmtos.id_pessoa = pessoas.id_pessoa where lancmtos.id_lanc = ${id_lanc}`;
-    db.query(SQL, (err, result_pessoa) => {
-        if (err) { res.status(404).json('404!')}
-        else {res.set({result_pessoa });} 
-
-        let SQL2 = `select lancmtos_detalhado.id_pessoa, lancmtos_detalhado.cod_lancdet,lancmtos_detalhado.valor_real, lancmtos_detalhado.cod_rec 
-        from lancmtos_detalhado where lancmtos_detalhado.cod_lancdet = ${id_lanc}`;
-    db.query(SQL2, (err, result_boletos) => {
-        if (err) { res.status(404).json('404!2')}
-        else {res.set({ result_boletos });}
-
-    const sortKey = id_lanc;
-        result_pessoa.sort((a, b) => {
-    if (a[sortKey] < b[sortKey]) {
-        return -1;}
-    if (a[sortKey] > b[sortKey]) {
-        return 1; }
-    return 0;
-})
-
-let pessoa_Map = result_pessoa.reduce((map, row) => {
-    key = row[id_lanc]; 
-    map[key] = row;
-    return map;
-}, {})
-
- let resultMap = result_boletos.reduce((map, row) => { 
-    let key = row[id_lanc];
-    if (map[key]) { 
-        if (!map[key].lancmtos_detalhado) map[key].lancmtos_detalhado = [];
-        map[key].lancmtos_detalhado.push(row); }
-    return map;
-}, pessoa_Map)
-//-----------------------------------/// funcionando
-let result = Object.values(resultMap);
-console.log("Result:", result);
-res.status(200).json({result }); 
-     
-    });
-  });
-}); */
-
 app.post("/lancPost", verify, async (req, res) => {
-    let { id_ent, id_lanc, id_pessoa,cod_pessoa, id_user, id_rec, cod_rec, valor_real, parc, situacao,data_cad, nossonum, pago } = req.body; 
+    let { id_ent, id_lanc, id_pessoa, cod_pessoa, id_user, id_rec, cod_rec, valor_real, parc, situacao, data_cad, nossonum, pago } = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(500).json('Erro1: Banco de Dados') }
@@ -2380,7 +2423,7 @@ app.post("/lancPost", verify, async (req, res) => {
                         let cod_lancdet = id_lanc;
                         let cod_insc = cod_pessoa;
                         let SQLi = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,id_rec,cod_rec,valor_real,cod_insc, situacao,pago,nossonum) values (?,?,?,?,?,?,?,?,?,?,?)";
-                        db.query(SQLi, [id_ent, cod_lancdet, id_pessoa, id_user, id_rec, cod_rec, valor_real,cod_insc, situacao, pago,nossonum], (err1, result) => {
+                        db.query(SQLi, [id_ent, cod_lancdet, id_pessoa, id_user, id_rec, cod_rec, valor_real, cod_insc, situacao, pago, nossonum], (err1, result) => {
                             if (err1) { res.status(500).json(msgErr) }
                             else { res.set(result[0]) }
                             if (result.affectedRows) {
@@ -2408,26 +2451,27 @@ app.post("/lancPost", verify, async (req, res) => {
                     else { res.set(result[0]) }
                     let cod_lanc = result[0].cod_lanc + 1;
                     let numero_proc = ("0000000" + cod_lanc).slice(-6) + '/' + new Date().getFullYear();
-                    let nossonum = new Date().getFullYear() + ("0000" + cod_rec).slice(-4) + ("000000" + cod_lanc).slice(-6);  
-                    
-                    let cod_insc = cod_pessoa;                  
+                    let exercicio = new Date().getFullYear();
+                    let nossonum = new Date().getFullYear() + ("0000" + cod_rec).slice(-4) + ("000000" + cod_lanc).slice(-6);
+
+                    let cod_insc = cod_pessoa;
                     let SQLi = "insert into lancmtos (id_ent,cod_lanc,id_pessoa, id_user,id_rec, cod_rec, valor_real,cod_insc,parc,situacao, data_cad, pago,nossonum) values (?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                    db.query(SQLi, [id_ent, cod_lanc, id_pessoa, id_user, id_rec, cod_rec, valor_real,cod_insc, parc, situacao,data_cad, pago,nossonum], (err1, result) => {
+                    db.query(SQLi, [id_ent, cod_lanc, id_pessoa, id_user, id_rec, cod_rec, valor_real, cod_insc, parc, situacao, data_cad, pago, nossonum], (err1, result) => {
                         if (err1) { res.status(500).json(msgErr), console.log(err1) }
                         else { res.set(result[0]) }
                         let id_lanc = result.insertId;
                         if (id_lanc) {
                             let cod_lancdet = id_lanc;
                             let msg = 'Lançamento Gerado, Receita adicionada!';
-                            let SQLi = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,id_rec,cod_rec,valor_real,cod_insc, situacao,pago,nossonum) values (?,?,?,?,?,?,?,?,?,?,?)";
-                            db.query(SQLi, [id_ent, cod_lancdet, id_pessoa, id_user, id_rec, cod_rec, valor_real,cod_insc, situacao, pago,nossonum], (err1, result) => {
+                            let SQLi = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,id_rec,cod_rec,valor_real,cod_insc, situacao,pago,nossonum,exercicio,numero_proc) values (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                            db.query(SQLi, [id_ent, cod_lancdet, id_pessoa, id_user, id_rec, cod_rec, valor_real, cod_insc, situacao, pago, nossonum,exercicio,numero_proc], (err1, result) => {
                                 if (err1) { res.status(500).json(msgErr), console.log(err1) }
                                 else { res.set(result[0]) }
                                 if (result.affectedRows) {
                                     let SelCod = `select receitas.des_rec as nome_rec from receitas left join lancmtos on lancmtos.id_rec = receitas.id_rec where receitas.cod_rec = ${cod_rec}`;
                                     db.query(SelCod, (err, result2) => {
                                         if (result2) {
-                                            
+
                                             let desc_lanc = `VALOR REFERÊNTE A EMISSÃO DE ${result2[0].nome_rec}.`;
                                             let SelCod1 = `select lancmtos_detalhado.id_lancdet, lancmtos_detalhado.cod_lancdet, lancmtos_detalhado.id_rec, lancmtos_detalhado.cod_rec, receitas.des_rec,lancmtos_detalhado.valor_real from lancmtos_detalhado 
                             left join receitas on lancmtos_detalhado.id_rec = receitas.id_rec where lancmtos_detalhado.cod_lancdet = ${id_lanc}`;
@@ -2448,9 +2492,10 @@ app.post("/lancPost", verify, async (req, res) => {
         }
     });
 });
+
 //continuação insersão de DAM PESSOAS
 app.put("/lancmto", verify, async (req, res) => {
-    const { id_lanc, id_pessoa, id_user, desc_lanc, valor_real, data_venc, numero_proc, data_lanc } = req.body; console.log(req.body)
+    const { id_lanc, id_pessoa, id_user, desc_lanc, valor_real, data_venc, numero_proc, data_lanc } = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!'), console.log(err) }
@@ -2459,7 +2504,7 @@ app.put("/lancmto", verify, async (req, res) => {
         if (role === 1) {  //set venc_inicial = '${venc_inicial.split('-').reverse().join('/')}'
             let sql1 = `update lancmtos set venc_inicial = '${data_venc}', data_venc = '${data_venc.split('-').reverse().join('/')}',valor_original = '${valor_real}',valor_real = '${valor_real}',
             desc_lanc = '${desc_lanc}',exercicio = ${new Date().getFullYear()},numero_proc = '${numero_proc}',
-            data_lanc = '${data_lanc}' where id_lanc = '${id_lanc}' and id_pessoa = '${id_pessoa}'`;
+            data_lanc = '${data_lanc.split('/').reverse().join('-')}' where id_lanc = '${id_lanc}' and id_pessoa = '${id_pessoa}'`;
             db.query(sql1, (err, result1) => {
                 if (err) {
                     res.status(404).json('404!')
@@ -2477,92 +2522,91 @@ app.put("/calcEnc/:id_lanc/:id_user", verify, async (req, res) => {
     let sql1 = `select lancmtos.valor_original, lancmtos.id_pessoa,lancmtos.id_ent,lancmtos.venc_inicial,lancmtos.data_venc,lancmtos.nossonum,lancmtos.cod_insc,lancmtos.exercicio,lancmtos.pago 
     from lancmtos where lancmtos.id_lanc = ${id_lanc}`;
     db.query(sql1, (err, lancmto) => {
-        if (lancmto[0].pago === 'S') { 
+        if (lancmto[0].pago === 'S') {
             res.status(203).json({ id_lanc, msg: 'Não Atualizado: Já pago!' })
-           } else {   
+        } else {
             let dataAtual = new Date();
             let vencimento = new Date(lancmto[0].data_venc.split('/').reverse().join('-')).toLocaleDateString("en", { year: "numeric", day: "2-digit", month: "2-digit" });
             const dias = (new Date(dataAtual.toLocaleDateString("en", { year: "numeric", day: "2-digit", month: "2-digit" })).getTime() - new Date(vencimento).getTime()) / (1000 * 3600 * 24);
-            console.log('dias',dias); console.log('DT1',new Date(dataAtual.toLocaleDateString("en", { year: "numeric", day: "2-digit", month: "2-digit" }))); 
-
-            if ( dias <= 0 
+            
+            if (dias <= 0
                 // lancmto[0].data_venc >= dataAtual.toLocaleDateString("en", { year: "numeric", day: "2-digit", month: "2-digit" }) 
-            ) { 
+            ) {
                 res.status(203).json({ id_lanc, msg: 'Não está vencido!' });
-               } else {             
-            let sql1 = `select entidades.cod_juros,entidades.cod_multa,entidades.cod_corr,entidades.dias_venc from entidades where entidades.id_ent = ${lancmto[0].id_ent}`;
-            db.query(sql1, (err, entidad) => {
-                let sql1 = `select receitas.id_rec, receitas.aliq from receitas where receitas.id_ent = ${lancmto[0].id_ent} and receitas.cod_rec = ${entidad[0].cod_juros}`;
-                db.query(sql1, (err, res_juros) => { 
-                    let sql1 = `select receitas.id_rec, receitas.aliq from receitas where receitas.id_ent = ${lancmto[0].id_ent} and receitas.cod_rec = ${entidad[0].cod_multa}`;
-                    db.query(sql1, (err, res_multa) => {
-                        let sql1 = `select receitas.id_rec, receitas.aliq from receitas where receitas.id_ent = ${lancmto[0].id_ent} and receitas.cod_rec = ${entidad[0].cod_corr}`;
-                        db.query(sql1, (err, res_corr) => {
-                            let sql3 = `delete from lancmtos_detalhado where lancmtos_detalhado.id_ent = ${lancmto[0].id_ent} and lancmtos_detalhado.cod_lancdet = ${id_lanc} 
+            } else {
+                let sql1 = `select entidades.cod_juros,entidades.cod_multa,entidades.cod_corr,entidades.dias_venc from entidades where entidades.id_ent = ${lancmto[0].id_ent}`;
+                db.query(sql1, (err, entidad) => {
+                    let sql1 = `select receitas.id_rec, receitas.aliq from receitas where receitas.id_ent = ${lancmto[0].id_ent} and receitas.cod_rec = ${entidad[0].cod_juros}`;
+                    db.query(sql1, (err, res_juros) => {
+                        let sql1 = `select receitas.id_rec, receitas.aliq from receitas where receitas.id_ent = ${lancmto[0].id_ent} and receitas.cod_rec = ${entidad[0].cod_multa}`;
+                        db.query(sql1, (err, res_multa) => {
+                            let sql1 = `select receitas.id_rec, receitas.aliq from receitas where receitas.id_ent = ${lancmto[0].id_ent} and receitas.cod_rec = ${entidad[0].cod_corr}`;
+                            db.query(sql1, (err, res_corr) => {
+                                let sql3 = `delete from lancmtos_detalhado where lancmtos_detalhado.id_ent = ${lancmto[0].id_ent} and lancmtos_detalhado.cod_lancdet = ${id_lanc} 
                             and lancmtos_detalhado.id_rec in ( ${res_juros[0].id_rec},${res_multa[0].id_rec},${res_corr[0].id_rec})`;
-                            db.query(sql3, (err) => {
-                                if (err){console.log('Erro ao calcular enc Id_Ent:',id_ent)}
-                                else{       
-                           // let venc_inicial = '13/01/2024'; 
-                            let venc_inicial = new Date(lancmto[0].venc_inicial).toLocaleDateString("en", { year: "numeric", day: "2-digit", month: "2-digit" });
-                           // let venc_inicial = lancmto[0].venc_inicial;
-                            const diasAtraso = (new Date(dataAtual.toLocaleDateString("en", { year: "numeric", day: "2-digit", month: "2-digit" })).getTime() - new Date(venc_inicial).getTime()) / (1000 * 3600 * 24);
+                                db.query(sql3, (err) => {
+                                    if (err) { console.log('Erro ao calcular enc Id_Ent:', id_ent) }
+                                    else {
+                                        // let venc_inicial = '13/01/2024'; 
+                                        let venc_inicial = new Date(lancmto[0].venc_inicial).toLocaleDateString("en", { year: "numeric", day: "2-digit", month: "2-digit" });
+                                        // let venc_inicial = lancmto[0].venc_inicial;
+                                        const diasAtraso = (new Date(dataAtual.toLocaleDateString("en", { year: "numeric", day: "2-digit", month: "2-digit" })).getTime() - new Date(venc_inicial).getTime()) / (1000 * 3600 * 24);
 
-                            let valor_juros = parseFloat(lancmto[0].valor_original) * res_juros[0].aliq / 100 * diasAtraso;
-                            let valor_multa = parseFloat(lancmto[0].valor_original) * res_multa[0].aliq / 100 * diasAtraso;
-                            let valor_corr = parseFloat(lancmto[0].valor_original) * res_corr[0].aliq / 100 * diasAtraso;
+                                        let valor_juros = parseFloat(lancmto[0].valor_original) * res_juros[0].aliq / 100 * diasAtraso;
+                                        let valor_multa = parseFloat(lancmto[0].valor_original) * res_multa[0].aliq / 100 * diasAtraso;
+                                        let valor_corr = parseFloat(lancmto[0].valor_original) * res_corr[0].aliq / 100 * diasAtraso;
 
-                            dataAtual.setDate(dataAtual.getDate() + entidad[0].dias_venc);                    
-                            let valor_total = lancmto[0].valor_original + valor_juros + valor_multa + valor_corr;
-                            let msgErr = 'Erro ao Cancular Encargos' ; //set data_venc = '${dataAtual.toLocaleDateString('pt-BR')}',
-                            let sql = `update lancmtos set valor_real = '${valor_total}', valor_juros = '${valor_juros}',valor_multa = '${valor_multa}',valor_corr = '${valor_corr}',
+                                        dataAtual.setDate(dataAtual.getDate() + entidad[0].dias_venc);
+                                        let valor_total = lancmto[0].valor_original + valor_juros + valor_multa + valor_corr;
+                                        let msgErr = 'Erro ao Cancular Encargos'; //set data_venc = '${dataAtual.toLocaleDateString('pt-BR')}',
+                                        let sql = `update lancmtos set valor_real = '${valor_total}', valor_juros = '${valor_juros}',valor_multa = '${valor_multa}',valor_corr = '${valor_corr}',
                             data_venc = '${dataAtual.toLocaleDateString('pt-BR')}' where id_lanc = '${id_lanc}'`;
-                            db.query(sql, (err1, result) => { 
-                                if (err1) { res.status(500).json(msgErr)}
-                                else { 
-                                    if (result) {                                        
-                                         valor_juros === 'NaN' ? valor_real = 0 : valor_real = valor_juros;                
-                                        let sql1 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_rec,id_user,cod_rec,nossonum,cod_insc,exercicio,valor_real, situacao,pago) values (?,?,?,?,?,?,?,?,?,?,?,?)";                                  
-                                        db.query(sql1, [lancmto[0].id_ent, id_lanc, lancmto[0].id_pessoa,res_juros[0].id_rec, id_user, entidad[0].cod_juros, lancmto[0].nossonum ,lancmto[0].cod_insc,lancmto[0].exercicio,valor_real, 'E', 'S'], (err, result1) => {
-                                            if (err) { res.status(500).json(msgErr) }
+                                        db.query(sql, (err1, result) => {
+                                            if (err1) { res.status(500).json(msgErr) }
                                             else {
-                                                let valor_real = valor_multa;
-                                         if (valor_multa === 'NaN'){ valor_real = 0}                                 
-                                        let sql1 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_rec,id_user,cod_rec,nossonum,cod_insc,exercicio,valor_real, situacao,pago) values (?,?,?,?,?,?,?,?,?,?,?,?)";                                  
-                                        db.query(sql1, [lancmto[0].id_ent, id_lanc, lancmto[0].id_pessoa,res_multa[0].id_rec, id_user, entidad[0].cod_multa, lancmto[0].nossonum ,lancmto[0].cod_insc,lancmto[0].exercicio,valor_real, 'E', 'S'], (err, result1) => {
-                                                    if (err) { res.status(500).json(msgErr)}
-                                                    else {
-                                                        let valor_real = valor_corr;
-                                                        if (valor_corr === 'NaN'){ valor_real = 0}                                 
-                                                       let sql1 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_rec,id_user,cod_rec,nossonum,cod_insc,exercicio,valor_real, situacao,pago) values (?,?,?,?,?,?,?,?,?,?,?,?)";                                  
-                                                       db.query(sql1, [lancmto[0].id_ent, id_lanc, lancmto[0].id_pessoa,res_corr[0].id_rec, id_user, entidad[0].cod_corr, lancmto[0].nossonum ,lancmto[0].cod_insc,lancmto[0].exercicio,valor_real, 'E', 'S'], (err, result1) => {
-                                                            if (err) { res.status(500).json(msgErr)}
-                                                            else {
-                                                                res.status(201).json({ id_lanc, msg: 'Atulizado com sucesso!' })
-                                                            };
-                                                        });
-                                                    };
-                                                });
+                                                if (result) {
+                                                    valor_juros === 'NaN' ? valor_real = 0 : valor_real = valor_juros;
+                                                    let sql1 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_rec,id_user,cod_rec,nossonum,cod_insc,exercicio,valor_real, situacao,pago) values (?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                    db.query(sql1, [lancmto[0].id_ent, id_lanc, lancmto[0].id_pessoa, res_juros[0].id_rec, id_user, entidad[0].cod_juros, lancmto[0].nossonum, lancmto[0].cod_insc, lancmto[0].exercicio, valor_real, 'E', 'S'], (err, result1) => {
+                                                        if (err) { res.status(500).json(msgErr) }
+                                                        else {
+                                                            let valor_real = valor_multa;
+                                                            if (valor_multa === 'NaN') { valor_real = 0 }
+                                                            let sql1 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_rec,id_user,cod_rec,nossonum,cod_insc,exercicio,valor_real, situacao,pago) values (?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                            db.query(sql1, [lancmto[0].id_ent, id_lanc, lancmto[0].id_pessoa, res_multa[0].id_rec, id_user, entidad[0].cod_multa, lancmto[0].nossonum, lancmto[0].cod_insc, lancmto[0].exercicio, valor_real, 'E', 'S'], (err, result1) => {
+                                                                if (err) { res.status(500).json(msgErr) }
+                                                                else {
+                                                                    let valor_real = valor_corr;
+                                                                    if (valor_corr === 'NaN') { valor_real = 0 }
+                                                                    let sql1 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_rec,id_user,cod_rec,nossonum,cod_insc,exercicio,valor_real, situacao,pago) values (?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                                    db.query(sql1, [lancmto[0].id_ent, id_lanc, lancmto[0].id_pessoa, res_corr[0].id_rec, id_user, entidad[0].cod_corr, lancmto[0].nossonum, lancmto[0].cod_insc, lancmto[0].exercicio, valor_real, 'E', 'S'], (err, result1) => {
+                                                                        if (err) { res.status(500).json(msgErr) }
+                                                                        else {
+                                                                            res.status(201).json({ id_lanc, msg: 'Atulizado com sucesso!' })
+                                                                        };
+                                                                    });
+                                                                };
+                                                            });
 
-                                            };
+                                                        };
+                                                    });
+
+                                                }
+                                            }
                                         });
 
                                     }
-                                }
-                            });
 
-                                }
+                                });
 
                             });
-
                         });
                     });
                 });
-            });
-       
-            
+
+
+            }
         }
-    }
     });
 });
 
@@ -2580,7 +2624,7 @@ app.get("/consultaBaixa/:nossonum/:id_ent", verify, async (req, res) => {
 );
 
 app.put("/BaixaManual", verify, async (req, res) => {
-    const { id_user, nossonum, data_pgmto, pago, valor_real, id_ent } = req.body; console.log(req.body)
+    const { id_user, nossonum, data_pgmto, pago, valor_real, id_ent } = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!'), console.log(err) }
@@ -2588,10 +2632,10 @@ app.put("/BaixaManual", verify, async (req, res) => {
         role = result[0].role;
         if (role === 1) {
             if (pago === 'N') {
-                let sql1 = `update lancmtos set lancmtos.valor_rec = ${valor_real}, lancmtos.data_pgmto = '${data_pgmto.split('-').reverse().join('/')}', lancmtos.data_cred = '${data_pgmto.split('-').reverse().join('/')}', lancmtos.tipo_baixa = '000', lancmtos.pago = 'S' where  lancmtos.nossonum = '${nossonum}' and lancmtos.id_ent = '${id_ent}'`;
+                let sql1 = `update lancmtos set lancmtos.valor_rec = ${valor_real}, lancmtos.data_pgmto = '${data_pgmto}', lancmtos.data_cred = '${data_pgmto}', lancmtos.tipo_baixa = '000', lancmtos.pago = 'S' where  lancmtos.nossonum = '${nossonum}' and lancmtos.id_ent = '${id_ent}'`;
                 db.query(sql1, (err) => {
                     if (err) { res.status(404).json('404!'); console.log(err) } else {
-                        let sql2 = `update lancmtos_detalhado set lancmtos_detalhado.valor_rec = lancmtos_detalhado.valor_real, lancmtos_detalhado.data_pgmto = '${data_pgmto.split('-').reverse().join('/')}', lancmtos_detalhado.data_cred = '${data_pgmto.split('-').reverse().join('/')}', lancmtos_detalhado.tipo_baixa = '000', lancmtos_detalhado.pago = 'S' where  lancmtos_detalhado.nossonum = '${nossonum}' and lancmtos_detalhado.id_ent = '${id_ent}'`;
+                        let sql2 = `update lancmtos_detalhado set lancmtos_detalhado.valor_rec = lancmtos_detalhado.valor_real, lancmtos_detalhado.data_pgmto = '${data_pgmto}', lancmtos_detalhado.data_cred = '${data_pgmto}', lancmtos_detalhado.tipo_baixa = '000', lancmtos_detalhado.pago = 'S' where  lancmtos_detalhado.nossonum = '${nossonum}' and lancmtos_detalhado.id_ent = '${id_ent}'`;
                         db.query(sql2, (err) => {
                             if (err) {
                                 res.status(404).json('404!'); console.log(err)
@@ -2608,7 +2652,7 @@ app.put("/BaixaManual", verify, async (req, res) => {
 );
 
 app.put("/estornoBaixa", verify, async (req, res) => {
-    const { id_user, nossonum, id_ent } = req.body; console.log(req.body)
+    const { id_user, nossonum, id_ent } = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!') }
@@ -2618,7 +2662,7 @@ app.put("/estornoBaixa", verify, async (req, res) => {
             let sql1 = `update lancmtos set lancmtos.data_pgmto = '', lancmtos.data_cred = '',lancmtos.tipo_baixa = '', lancmtos.pago = 'N' where  lancmtos.nossonum = '${nossonum}' and lancmtos.id_ent = '${id_ent}'`;
             db.query(sql1, (err) => {
                 if (err) { res.status(404).json('404!'); } else {
-                    let sql2 = `update lancmtos_detalhado set lancmtos_detalhado.data_pgmto = '', lancmtos_detalhado.data_cred = '', lancmtos_detalhado.tipo_baixa = '', lancmtos_detalhado.pago = 'S' where  lancmtos_detalhado.nossonum = '${nossonum}' and lancmtos_detalhado.id_ent = '${id_ent}'`;
+                    let sql2 = `update lancmtos_detalhado set lancmtos_detalhado.data_pgmto = '', lancmtos_detalhado.data_cred = '', lancmtos_detalhado.tipo_baixa = '', lancmtos_detalhado.pago = 'N' where  lancmtos_detalhado.nossonum = '${nossonum}' and lancmtos_detalhado.id_ent = '${id_ent}'`;
                     db.query(sql2, (err) => {
                         if (err) {
                             res.status(404).json('404!'); console.log(err);
@@ -2648,9 +2692,9 @@ app.delete("/delLanc/:id_user/:id_lanc/:id_pessoa", verify, (req, res) => {
                 if (err) { res.status(405).json(msgErr) }
                 else {
                     let Sql2 = `update lancmtos set lancmtos.situacao = 'C' where lancmtos.id_lanc  = ${id_lanc} and lancmtos.id_pessoa = ${id_pessoa} and lancmtos.pago = 'N'`;
-                    db.query(Sql2, (err,result) => {
-                        if (result.affectedRows) { res.status(201).json({ id_pessoa, msg: 'Feito!' })}
-                        else {  res.status(203).json({ id_pessoa, msg: 'Impossível Cancelar: DAM Pago!' }) };
+                    db.query(Sql2, (err, result) => {
+                        if (result.affectedRows) { res.status(201).json({ id_pessoa, msg: 'Feito!' }) }
+                        else { res.status(203).json({ id_pessoa, msg: 'Impossível Cancelar: DAM Pago!' }) };
                     });
                 }
             });
@@ -2673,8 +2717,8 @@ app.delete("/delLancDt/:id/:id_lanc", verify, (req, res) => {
         }
     });
 });
-//relatorios lancmtos
 
+//relatorios lancmtos
 app.get("/pessoaId/:id_pessoa", verify, (req, res) => {
     const { id_pessoa } = req.params;
     let SqlPes = `select pessoas.id_ent, pessoas.id_pessoa,pessoas.cod_pessoa, pessoas.nome_pessoa,pessoas.fantasia,pessoas.cpf_cnpj, pessoas.numero, pessoas.cep, pessoas.rua,pessoas.bairro,
@@ -2798,15 +2842,21 @@ app.get("/pessoaId/:id_pessoa", verify, (req, res) => {
 //IPTU
 app.get('/iptuId/:id_imovel', async (req, res) => {
     const { id_imovel } = req.params;
-    let SQL = `select pessoas.id_pessoa,pessoas.nome_pessoa, pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.cep, imoveis.id_ent,imoveis.id_imovel,imoveis.cod_imovel,imoveis.inscricao,imoveis.area_terreno,imoveis.area_construida,imoveis.valor_venal,imoveis.valor_iptu,imoveis.valor_antec,imoveis.valor_total, imoveis.uso_solo,
-    imoveis.tx1,imoveis.tx2,imoveis.tx3, imoveis.situacao, imoveis.data_cad,imoveis.data_venc,imoveis.nossonum, imoveis.exercicio,imoveis.pago,tipo_imovel.desc_tipo_imovel, padrao.desc_padrao from imoveis 
-    left join pessoas on imoveis.id_pessoa = pessoas.id_pessoa left join tipo_imovel on imoveis.tipo_imovel = tipo_imovel.cod_tipo_imovel left join padrao on imoveis.padrao = padrao.cod_padrao where imoveis.id_imovel = ${id_imovel}`;
+    let SQL = `select pessoas.id_pessoa,pessoas.nome_pessoa, pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.cep, 
+    imoveis.id_ent,imoveis.id_imovel,imoveis.cod_imovel,imoveis.inscricao,imoveis.area_terreno,imoveis.area_construida,
+    imoveis.valor_venal,imoveis.valor_iptu,imoveis.valor_antec,imoveis.valor_total, imoveis.uso_solo,
+    imoveis.tx1,imoveis.tx2,imoveis.tx3, imoveis.situacao, imoveis.data_cad,imoveis.data_venc,imoveis.nossonum, imoveis.exercicio,imoveis.pago,
+    (select sum(dividas.valor_total) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as divida_total,
+    tipo_imovel.desc_tipo_imovel, padrao.desc_padrao from imoveis 
+    left join pessoas on imoveis.id_pessoa = pessoas.id_pessoa 
+    left join tipo_imovel on imoveis.tipo_imovel = tipo_imovel.cod_tipo_imovel 
+    left join padrao on imoveis.padrao = padrao.cod_padrao where imoveis.id_imovel = ${id_imovel}`;
     db.query(SQL, (err, result_iptu) => {
-        if (err) { res.status(404).json('404!') }
+        if (err) { res.status(404).json('404!');console.log(err) }
         else {
-            res.set(result_iptu); console.log('valor:', result_iptu[0].pago)
+            res.set(result_iptu);
             if (result_iptu[0].valor_total === 0) {
-                res.status(203).json({ msg: 'Valor Inválido!' })
+                res.status(203).json({ msg: 'Valor Zerado!' })
             } else {
                 if (result_iptu[0].pago === 'S') {
                     res.status(203).json({ msg: 'IPTU Pago!' })
@@ -2902,102 +2952,106 @@ app.get('/dividasId/:id_imovel', async (req, res) => {
         if (err) { res.status(404).json('404!') }
         else {
             res.set(result_divida);
+            if (result_divida[0].divida_total > 0) {
 
-            let SQL1 = `select dividas.id_divida, dividas.exercicio, dividas.valor_original, dividas.valor_juros,dividas.valor_multa,dividas.valor_corr,dividas.desconto, dividas.valor_total
-             from dividas where dividas.id_imovel = ${id_imovel} and dividas.pago = 'N'`;
-            db.query(SQL1, (err, result_dividas) => {
-                if (err) { res.status(404).json('404!') }
-                else {
-                    res.set({ result_dividas });
+                     let SQL1 = `select dividas.id_divida, dividas.exercicio, dividas.valor_original, dividas.valor_juros,dividas.valor_multa,dividas.valor_corr,dividas.desconto, dividas.valor_total
+                      from dividas where dividas.id_imovel = ${id_imovel} and dividas.pago = 'N'`;
+                     db.query(SQL1, (err, result_dividas) => {
+                         if (err) { res.status(404).json('404!') }
+                         else {
+                             res.set({ result_dividas });
 
-                    let SQL2 = `select entidades.msg1, entidades.msg2, entidades.msg3,entidades.msg4,entidades.venc_dvexercicio,entidades.exercicio, entidades.venc_dvtotal from entidades where entidades.id_ent = ${result_divida[0].id_ent}`;
-                    db.query(SQL2, (err, result_entid) => {
-                        if (err) { res.status(404).json('404!') }
-                        else {
-                            res.set({ result_entid });
+                             let SQL2 = `select entidades.msg1, entidades.msg2, entidades.msg3,entidades.msg4,entidades.venc_dvexercicio,entidades.exercicio, entidades.venc_dvtotal from entidades where entidades.id_ent = ${result_divida[0].id_ent}`;
+                             db.query(SQL2, (err, result_entid) => {
+                                 if (err) { res.status(404).json('404!') }
+                                 else {
+                                     res.set({ result_entid });
 
-                            let SQL3 = `select bancos.agencia, bancos.conta, bancos.convenio, bancos.cod_banco, bancos.nome_banco, bancos.local_pgto,bancos.brasao 
-        from bancos where bancos.ativo = 'S' limit 1`;
-                            db.query(SQL3, (err, resbanco) => {
+                                     let SQL3 = `select bancos.agencia, bancos.conta, bancos.convenio, bancos.cod_banco, bancos.nome_banco, bancos.local_pgto,bancos.brasao 
+                 from bancos where bancos.ativo = 'S' limit 1`;
+                                     db.query(SQL3, (err, resbanco) => {
 
-                                if (err) { res.status(404).json('404') }
-                                else {
-                                    res.set({ resbanco });
-                                    let rowDataPkt = { ...result_divida[0] };
-                                    let rowDataPktb = { ...resbanco[0] };
+                                         if (err) { res.status(404).json('404') }
+                                         else {
+                                             res.set({ resbanco });
+                                             let rowDataPkt = { ...result_divida[0] };
+                                             let rowDataPktb = { ...resbanco[0] };
 
-                                    let vlt = rowDataPkt.valor_total;
-                                    let conv = rowDataPktb.convenio;
-                                    let dtvc = rowDataPkt.data_venc;
-                                    let idImvel = rowDataPkt.id_imovel;
+                                             let vlt = rowDataPkt.valor_total;
+                                             let conv = rowDataPktb.convenio;
+                                             let dtvc = rowDataPkt.data_venc;
+                                             let idImvel = rowDataPkt.id_imovel;
 
-                                    let cod_banco = resbanco[0].cod_banco;
-                                    let agencia = resbanco[0].agencia;
-                                    let conta = resbanco[0].conta;
-                                    let convenio = resbanco[0].convenio;
-                                    let brasao = resbanco[0].brasao;
-                                    let nome_banco = resbanco[0].nome_banco;
-                                    let local_pgto = resbanco[0].local_pgto;
-                                    let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + new Date().getFullYear() + dtvc + '8' + ("00000000" + idImvel).slice(-9) + '008';
-                                    codigobarra = codigobarra.replace(/[^0-9]/g, '');
-                                    let linhadigitavel = codigobarra.substring(0, 12) + ".7 " + codigobarra.substring(12, 24) + ".5 " + codigobarra.substring(24, 36) + ".6 " + codigobarra.substring(36, 48) + ".8 ";
-                                    let result_banco = [{
-                                        'cod_banco': cod_banco, 'agencia': agencia, 'conta': conta, 'convenio': convenio, 'nome_banco': nome_banco, 'local_pgto': local_pgto,
-                                        'brasao': brasao, 'codigobarra': codigobarra, 'linhadigitavel': linhadigitavel
-                                    }];
-                                    const sortKey = id_imovel;
-                                    result_divida.sort((a, b) => {
-                                        if (a[sortKey] < b[sortKey]) {
-                                            return -1;
-                                        }
-                                        if (a[sortKey] > b[sortKey]) {
-                                            return 1;
-                                        }
-                                        return 0;
-                                    })
-                                    let iptu_Map = result_divida.reduce((map, row) => {
-                                        key = row[id_imovel];
-                                        map[key] = row;
-                                        return map;
-                                    }, {})
+                                             let cod_banco = resbanco[0].cod_banco;
+                                             let agencia = resbanco[0].agencia;
+                                             let conta = resbanco[0].conta;
+                                             let convenio = resbanco[0].convenio;
+                                             let brasao = resbanco[0].brasao;
+                                             let nome_banco = resbanco[0].nome_banco;
+                                             let local_pgto = resbanco[0].local_pgto;
+                                             let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + new Date().getFullYear() + dtvc + '8' + ("00000000" + idImvel).slice(-9) + '008';
+                                             codigobarra = codigobarra.replace(/[^0-9]/g, '');
+                                             let linhadigitavel = codigobarra.substring(0, 12) + ".7 " + codigobarra.substring(12, 24) + ".5 " + codigobarra.substring(24, 36) + ".6 " + codigobarra.substring(36, 48) + ".8 ";
+                                             let result_banco = [{
+                                                 'cod_banco': cod_banco, 'agencia': agencia, 'conta': conta, 'convenio': convenio, 'nome_banco': nome_banco, 'local_pgto': local_pgto,
+                                                 'brasao': brasao, 'codigobarra': codigobarra, 'linhadigitavel': linhadigitavel
+                                             }];
+                                             const sortKey = id_imovel;
+                                             result_divida.sort((a, b) => {
+                                                 if (a[sortKey] < b[sortKey]) {
+                                                     return -1;
+                                                 }
+                                                 if (a[sortKey] > b[sortKey]) {
+                                                     return 1;
+                                                 }
+                                                 return 0;
+                                             })
+                                             let iptu_Map = result_divida.reduce((map, row) => {
+                                                 key = row[id_imovel];
+                                                 map[key] = row;
+                                                 return map;
+                                             }, {})
 
-                                    let resultMap0 = result_dividas.reduce((map, row) => {
-                                        let key = row["id_imovel"];
-                                        if (map[key]) {
-                                            if (!map[key].dividas) map[key].dividas = [];
-                                            map[key].dividas.push(row);
-                                        }
-                                        return map;
-                                    }, iptu_Map)
+                                             let resultMap0 = result_dividas.reduce((map, row) => {
+                                                 let key = row["id_imovel"];
+                                                 if (map[key]) {
+                                                     if (!map[key].dividas) map[key].dividas = [];
+                                                     map[key].dividas.push(row);
+                                                 }
+                                                 return map;
+                                             }, iptu_Map)
 
-                                    let resultMap1 = result_banco.reduce((map, row) => {
-                                        let key = row["id_banco"];
-                                        if (map[key]) {
-                                            if (!map[key].banco_ativo) map[key].banco_ativo = [];
-                                            map[key].banco_ativo.push(row);
-                                        }
-                                        return map;
-                                    }, iptu_Map)
-                                    //-----------------------------------/// funcionando
-                                    let resultMap2 = result_entid.reduce((map, row) => {
-                                        let key = row["id_ent"];
-                                        if (map[key]) {
-                                            if (!map[key].dados_Ent) map[key].dados_Ent = [];
-                                            map[key].dados_Ent.push(row);
-                                        }
-                                        return map;
-                                    }, resultMap1)
-                                    let result = Object.values(iptu_Map, resultMap0, resultMap1, resultMap2);
-                                    res.status(200).json({ result });
-                                }
-                            });//banco
-                        }
-                    });//entidade  
-                }
-            });//dividas  
+                                             let resultMap1 = result_banco.reduce((map, row) => {
+                                                 let key = row["id_banco"];
+                                                 if (map[key]) {
+                                                     if (!map[key].banco_ativo) map[key].banco_ativo = [];
+                                                     map[key].banco_ativo.push(row);
+                                                 }
+                                                 return map;
+                                             }, iptu_Map)
+                                             //-----------------------------------/ funcionando
+                                             let resultMap2 = result_entid.reduce((map, row) => {
+                                                 let key = row["id_ent"];
+                                                 if (map[key]) {
+                                                     if (!map[key].dados_Ent) map[key].dados_Ent = [];
+                                                     map[key].dados_Ent.push(row);
+                                                 }
+                                                 return map;
+                                             }, resultMap1)
+                                             let result = Object.values(iptu_Map, resultMap0, resultMap1, resultMap2);
+                                             res.status(200).json({ result });
+                                         }
+                                     });//banco
+                                 }
+                             });//entidade  
+                         }
+                     });//select dividas individual
+
+            } else {
+                res.status(203).json({ msg: 'Não há Dividas!' });
+            }
         }
-
-    });//IPTU
+    });//select dividas somada
 });
 
 //===========natureza========//
@@ -3142,7 +3196,7 @@ app.put("/cemiPut", verify, async (req, res) => {
         role = result[0].role;
         if (role === 1) {
             let sql1 = `update cemiterios set nome_cemi = '${nome_cemi}', email='${email}',telefone = '${telefone}',cidade = '${cidade}', endereco = '${endereco}',cnpj = '${cnpj}', data_alt = '${data_alt}', usu_cad = '${usu_cad}',
-            tx1 = '${tx1}', tx2 = '${tx2}', tx3 = '${tx3}', vl = '${vl}' where id_cemi = ${id_cemi}`;
+            tx1 = '${tx1.toLocaleString().replace(",", ".")}', tx2 = '${tx2.toLocaleString().replace(",", ".")}', tx3 = '${tx3.toLocaleString().replace(",", ".")}', vl = '${vl.toLocaleString().replace(",", ".")}' where id_cemi = ${id_cemi}`;
             db.query(sql1, (err, result) => {
                 if (err) { res.status(404).json('404!2'); console.log(err) }
                 else { res.status(200).json("Alterado!") }
@@ -3186,7 +3240,8 @@ app.put("/operador/", verify, async (req, res) => {
         if (role === 3) {
             res.status(401).json('Usuário não autorizado');
         } else {
-            let sql1 = `update operador set id_ent = ${id_ent}, nome_operador = '${nome_operador}', funcao_operador = '${funcao_operador}', telefone='${telefone}',descricao = '${descricao}', data_cad = '${data_cad}', data_alt = '${data_alt}',usu_cad = '${usu_cad}' where id_oper = ${id_oper}`;
+            let sql1 = `update operador set id_ent = ${id_ent}, nome_operador = '${nome_operador}', funcao_operador = '${funcao_operador}', 
+            telefone='${telefone}',descricao = '${descricao}', data_cad = '${data_cad}', data_alt = '${data_alt}',usu_cad = '${usu_cad}' where id_oper = ${id_oper}`;
             db.query(sql1, (err) => {
                 if (err) { res.status(404).json('404!') }
                 else { res.status(200).json('Alterado!') }
@@ -3197,6 +3252,15 @@ app.put("/operador/", verify, async (req, res) => {
 }
 );
 
+app.get("/operadores/:id_cemi", verify, (req, res) => {
+    const { id_cemi } = req.params;
+    let SQL = `select * from operador where id_cemi = ${id_cemi}`;
+    db.query(SQL, (err, result) => {
+        if (err) { res.status(404).json('404!') }
+        else { res.send({ result }) }
+    });
+});
+
 app.get("/operador/:id_oper", verify, (req, res) => {
     const { id_oper } = req.params;
     let SQL = `select * from operador where id_oper = ${id_oper}`;
@@ -3205,7 +3269,6 @@ app.get("/operador/:id_oper", verify, (req, res) => {
         else { res.send({ result }) }
     });
 });
-
 app.delete("/operador/:id_oper/:usu_cad", verify, (req, res) => {
     const { id_oper, usu_cad } = req.params;
     let Sql = `select role from usuarios where id_user = ${usu_cad}`;
@@ -3215,7 +3278,6 @@ app.delete("/operador/:id_oper/:usu_cad", verify, (req, res) => {
         if (result[0].role === 1) {
             let SQL = `delete from operador where id_oper = ${id_oper}`;
             db.query(SQL, (err) => {
-                console.log(id_oper, ',', usu_cad)
                 if (err) { res.status(405).json('Não é Possivel excluir: Registro Chave') }
                 else { res.status(200).json('Excluído!') }
             });
@@ -3224,15 +3286,15 @@ app.delete("/operador/:id_oper/:usu_cad", verify, (req, res) => {
 });
 //===========imoveis========//
 app.post("/imoveisPesq", (req, res) => {
-    let { id_ent, campo, text1, text2, limit_rows } = req.body;
+    let { id_ent, campo, text1, text2, limit_rows } = req.body; console.log(req.body)
     let CONDICAO = '';
-    if (text1 === '') { CONDICAO = `imoveis.inscricao like "${text1}%" order by imoveis.cod_imovel desc limit ${limit_rows}` } else {
+    if (text1 === '') { CONDICAO = `imoveis.inscricao like "${text1}%" order by imoveis.cod_imovel desc` } else {
         switch (campo) {
-            case 'data_cad': CONDICAO = `imoveis.${campo} between "${text1.split('-').reverse().join('/')}" and "${text2.split('-').reverse().join('/')}" order by imoveis.cod_imovel desc limit ${limit_rows}`; break;
-            case 'cod_imovel': CONDICAO = `imoveis.cod_imovel = "${text1}"`; break;
-            case 'inscricao': CONDICAO = `imoveis.inscricao like "${text1}%" order by imoveis.cod_imovel desc limit ${limit_rows}`; break;
-            case 'nome_pessoa': CONDICAO = `pessoas.nome_pessoa like "${text1}%" order by imoveis.cod_imovel desc limit ${limit_rows}`; break;
-            case 'cpf_cnpj': CONDICAO = `pessoas.cpf_cnpj like "${text1}%" order by imoveis.cod_imovel desc limit ${limit_rows}`; break;
+            case 'data_cad': CONDICAO = `imoveis.${campo} between "${text1.replace('/','-')}" and "${text2.replace('/','-')}" order by imoveis.cod_imovel desc`; break;
+            case 'cod_imovel': CONDICAO = `imoveis.cod_imovel like "${text1}%"`; break;
+            case 'inscricao': CONDICAO = `imoveis.inscricao like "${text1.replaceAll('.','')}%" order by imoveis.cod_imovel desc`; break;
+            case 'nome_pessoa': CONDICAO = `pessoas.nome_pessoa like "${text1}%" order by imoveis.cod_imovel desc`; break;
+            case 'cpf_cnpj': CONDICAO = `pessoas.cpf_cnpj like "${text1}%" order by imoveis.cod_imovel desc`; break;
         }
     }
     if (CONDICAO) {
@@ -3240,13 +3302,14 @@ app.post("/imoveisPesq", (req, res) => {
         imoveis.area_terreno,imoveis.area_construida,imoveis.valor_venal,imoveis.valor_total,imoveis.pago,imoveis.situacao, imoveis.cod_log, imoveis.lote, imoveis.quadra, imoveis.tipo_imovel, imoveis.valor_total,imoveis.tipo_localizacao, pessoas.id_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, 
         (select sum(dividas.valor_total) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as divida_total FROM imoveis 
         LEFT JOIN logradouros ON logradouros.id_log = imoveis.id_log LEFT JOIN loteamentos ON loteamentos.id_lote = imoveis.id_lote LEFT JOIN pessoas ON pessoas.id_pessoa = imoveis.id_pessoa 
-        where imoveis.id_ent = ${id_ent} and ${CONDICAO}`;
-        db.query(sql, (err, result) => {
+        where imoveis.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`; console.log(sql)
+        db.query(sql, (err, result) => { 
             if (err) { res.status(404).json('404!'); console.log(err) }
             else res.send(result);
         });
     }
 });
+
 
 app.put("/calcImovel/", verify, async (req, res) => {
     let { id_ent, id_user, id_imovel, tipo_imovel, area_terreno, area_construida, padrao, valor_m2, tx1, tx2, tx3, desconto, desconto_antec, data_alt, usu_cad } = req.body;
@@ -3329,7 +3392,6 @@ app.put("/calcImovelALL/", verify, async (req, res) => {
 
                         let Sql1 = `select valor_unitario as valor_unitario from padrao WHERE cod_padrao = ${padrao | 0} and id_ent = ${id_ent}`;
                         db.query(Sql1, (err, result1) => {
-                            console.log(Sql1)
                             if (err) { res.status(404).json('4042!'), console.log(err) }
                             else { res.set(result1[0]); }
                             let valor_unitario = result1[0].valor_unitario;
@@ -3342,13 +3404,12 @@ app.put("/calcImovelALL/", verify, async (req, res) => {
                                         else { res.set(result2[0]); }
                                         let aliq = result2[0].aliq;
                                         if (aliq) {
-                                            let valor_iptu = parseFloat(valor_venal) * aliq / 100; console.log('iptu', valor_iptu);
-                                            let valor_total = valor_iptu - parseFloat(desconto); console.log('Total', valor_total)
+                                            let valor_iptu = parseFloat(valor_venal) * aliq / 100;
+                                            let valor_total = valor_iptu - parseFloat(desconto);
                                             let desc1 = valor_total * desconto_antec / 100;
                                             let valor_antec = valor_total - desc1;
                                             let sql3 = `update imoveis set valor_venal = ${valor_venal}, valor_unitario = '${valor_unitario}', aliquota = '${aliq}', valor_iptu = '${valor_iptu}', valor_total = '${valor_total}', valor_antec = '${valor_antec}', data_alt = '${data_alt}', usu_cad = '${usu_cad}' where id_imovel = ${id_imovel}`;
                                             db.query(sql3, (err) => {
-                                                console.log(sql3)
                                                 let msg = 'Calculado!'
                                                 if (err) { res.status(404).json('4044!'); console.log(err) }
                                                 else { res.status(201).json({ id_imovel, msg }) }
@@ -3365,13 +3426,12 @@ app.put("/calcImovelALL/", verify, async (req, res) => {
                                         else { res.set(result2[0]); }
                                         let aliq = result2[0].aliq;
                                         if (aliq) {
-                                            let valor_iptu = parseFloat(valor_venal) * aliq / 100; console.log('iptu', valor_iptu);
-                                            let valor_total = valor_iptu - parseFloat(desconto); console.log('Total', valor_total)
+                                            let valor_iptu = parseFloat(valor_venal) * aliq / 100;
+                                            let valor_total = valor_iptu - parseFloat(desconto);
                                             let desc1 = valor_total * desconto_antec / 100;
                                             let valor_antec = valor_total - desc1;
                                             let sql3 = `update imoveis set valor_venal = ${valor_venal}, valor_unitario = '${valor_unitario | 0}', aliquota = '${aliq}', valor_iptu = '${valor_iptu}', valor_total = '${valor_total}', valor_antec = '${valor_antec}', data_alt = '${data_alt}', usu_cad = '${usu_cad}' where id_imovel = ${id_imovel}`;
                                             db.query(sql3, (err) => {
-                                                console.log(sql3)
                                                 let msg = 'Calculado!'
                                                 if (err) { res.status(404).json('4044!'); console.log(err) }
                                                 else { res.status(201).json({ id_imovel, msg }) }
@@ -3381,9 +3441,9 @@ app.put("/calcImovelALL/", verify, async (req, res) => {
                                 }
                             }
                         });
-                        i++; console.log('Calculado:', id_imovel)
+                        i++;
                     }
-                    while (i < arrImoveis.length); console.log('-----FIM------')
+                    while (i < arrImoveis.length);
                 });
             } else { res.status(401).json('Usuário Não autorizado!'); }
         }
@@ -3406,26 +3466,12 @@ from imoveis LEFT JOIN logradouros ON logradouros.id_log = imoveis.id_log LEFT J
     });
 });
 
-// app.get("/imoveisAll/:id_ent", verify, (req, res) => {
-//     //const {pesqnome} = req.params;
-//     const { id_ent } = req.params;
-//     let sql = `select imoveis.id_ent, imoveis.id_imovel, imoveis.cod_imovel, imoveis.id_pessoa,imoveis.id_user, imoveis.cod_pessoa, imoveis.inscricao, imoveis.num_imovel, logradouros.nome_log,logradouros.bairro_log,logradouros.cidade_log,loteamentos.id_lote, loteamentos.nome_lote, imoveis.situacao, imoveis.cod_log, imoveis.lote, imoveis.quadra, imoveis.tipo_imovel, imoveis.valor_total,
-//     imoveis.area_terreno,imoveis.area_construida,imoveis.valor_venal,imoveis.valor_total,imoveis.pago, pessoas.id_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, 
-//     (select sum(dividas.valor_total) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as divida_total FROM imoveis 
-//     LEFT JOIN logradouros ON logradouros.id_log = imoveis.id_log LEFT JOIN loteamentos ON loteamentos.id_lote = imoveis.id_lote LEFT JOIN pessoas ON pessoas.id_pessoa = imoveis.id_pessoa where imoveis.id_ent = ${id_ent} order by imoveis.cod_imovel desc`;
-//     db.query(sql, (err, result) => {
-//         console.log(err)
-//         if (err) { res.status(404).json('Sem Dados!') }
-//         else { res.send(result) }
-//     });
-// });
-
 app.post("/imoveis", verify, async (req, res) => {
     let { id_ent, id_pessoa, id_pessoa_resp, id_user, cod_pessoa, inscricao, inscricao_ant, id_log, cod_log, num_imovel, id_lote, cod_lote, lote, quadra, situacao, tipo_imovel, tipo_localizacao, situacao_imovel, isencao, patrimonio_terr, patrimonio_constru,
         uso_solo, coleta, coletor, elevacao, coberta, conservacao, padrao, pedologia, especie, construcao_piso, topografia, serv_agua, serv_ilumin, serv_pavimen, serv_energ, serv_esgoto, serv_galeria, limit_alagado, limit_scalc, limit_smuro, sanitaria, alinhamento,
         limit_encrav, limit_acident, posicao, complemento, face, area_terreno, area_construida, tx1, tx2, tx3, profund, num_frente, num_unid, num_pav, testada_r, testada_f, lateral_esq, lateral_dir, m_fundos, valor_m2, valor_vlog, valor_unitario, valor_venal, venal_inf,
         aliquota, valor_iptu, desconto, valor_total, obs, exercicio, pago, nossonum, data_cad, data_alt, usu_cad } = req.body;
-    if (!tipo_localizacao) { tipo_localizacao = 'U' }
+    if (!tipo_localizacao) { tipo_localizacao = 'U' };
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { return res.status(404).json('erro'), console.log(err) }
@@ -3463,7 +3509,7 @@ app.post("/imoveis", verify, async (req, res) => {
                                 valor_vlog, valor_unitario, valor_venal, venal_inf, aliquota, valor_iptu, desconto, valor_total, obs, exercicio, pago, nossonum, data_cad, data_alt, usu_cad],
                                 (err, result2) => {
                                     msg = "Salvo!";
-                                    if (err) { res.status(404).json('404!5'), console.log(err) }
+                                    if (err) { res.status(404).json('Campos Obrigatorios'), console.log(err) }
                                     else { res.status(201).json({ result2, msg }) }
                                 });
                         } else {
@@ -3533,7 +3579,6 @@ app.delete("/delImovel/:id_imovel/:id_user", verify, (req, res) => {
         } else {
             let SQL = `select imoveis.pago from imoveis where id_imovel = ${id_imovel}`;
             db.query(SQL, id_imovel, (err, result) => {
-                console.log(result)
                 if (result[0].pago === 'S') {
                     res.status(405).json('Impossível Excluir: IPTU Pago!')
                 } else {
@@ -3594,7 +3639,7 @@ app.put("/baixarIPTU/:id_user/:id_imovel/:opcao/:data_pgmto", verify, (req, res)
                                 res.set(result[0]);
                                 let cod_lanc = result[0].cod_lanc + 1;
                                 if (cod_lanc) {
-                                    let situacao = 'E'; let pago = 'S'; let parc = opcao; let cod_rec = '1000'; let desc_lanc = 'I.P.T.U.'; let referencia = exercicio; let cod_insc = id_imovel; let valor_real = valor_total; 
+                                    let situacao = 'E'; let pago = 'S'; let parc = opcao; let cod_rec = '1000'; let desc_lanc = 'I.P.T.U.'; let referencia = exercicio; let cod_insc = id_imovel; let valor_real = valor_total;
                                     let SQLi = "insert into lancmtos (id_ent,cod_lanc,id_pessoa, id_user,cod_rec,desc_lanc,referencia,cod_insc, valor_real,parc,situacao,pago,data_pgmto) values (?,?,?,?,?,?,?,?,?,?,?,?,?)";
                                     db.query(SQLi, [id_ent, cod_lanc, id_pessoa, id_user, cod_rec, desc_lanc, referencia, cod_insc, valor_real, parc, situacao, pago, data_pgmto], (err1, result2) => {
                                         if (err1) { console.log(err1) }
@@ -3616,7 +3661,7 @@ app.put("/baixarIPTU/:id_user/:id_imovel/:opcao/:data_pgmto", verify, (req, res)
                                                         })
                                                     }
                                                 });
-                                            } else { console.log('erro insert lancmtos'); }
+                                            } else { console.log('erro insert lancmtos') }
                                         }
                                     });
                                 }
@@ -3632,13 +3677,15 @@ app.put("/baixarIPTU/:id_user/:id_imovel/:opcao/:data_pgmto", verify, (req, res)
 });
 //===========Tumulos========//
 app.post("/tumulosPesq", verify, (req, res) => {
-    let { id_ent, campo, text1, text2 } = req.body;
+    let { id_ent, campo, text1, text2, limit_rows } = req.body; console.log(req.body);
     let CONDICAO = '';
+    if (!limit_rows) { limit_rows = 500 }
     if (text1 === '*') { text1 = ''; text2 = '' }
     switch (campo) {
-        case 'data_cad': CONDICAO = `tumulos.data_cad between "${text1.split('-').reverse().join('/')}" and "${text2.split('-').reverse().join('/')}" order by tumulos.cod_tum desc limit 200`; break;
-        case 'cod_tum': CONDICAO = `tumulos.cod_tum = '${text1}'`; break;
-        case 'nome_pessoa': CONDICAO = `pessoas.nome_pessoa like "${text1}%" order by tumulos.cod_tum desc limit 200`; break;
+        case 'data_cad': CONDICAO = `tumulos.data_cad between "${text1.replace('/','-')}" and "${text2.replace('/','-')}" order by tumulos.cod_tum desc`; break;
+        case 'cod_tum': CONDICAO = `tumulos.cod_tum like '${text1}%'`; break;
+        case 'nome_pessoa': CONDICAO = `pessoas.nome_pessoa like "${text1}%" order by tumulos.cod_tum desc`; break;
+        case 'cpf_cnpj': CONDICAO = `pessoas.cpf_cnpj like "${text1}%" order by tumulos.cod_tum desc`; break;
     }
     if (CONDICAO) {
         SQL = `select tumulos.id_tum,tumulos.cod_tum,tumulos.id_cemi, tumulos.id_pessoa, tumulos.conserv, tumulos.data_alt, tumulos.data_cad, tumulos.descricao, 
@@ -3646,29 +3693,13 @@ app.post("/tumulosPesq", verify, (req, res) => {
         tumulos.testada,tumulos.profundidade,tumulos.vl_total,tumulos.situacao,pessoas.id_pessoa, 
         pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.fixo,pessoas.email,cemiterios.id_cemi,cemiterios.nome_cemi FROM tumulos 
         LEFT JOIN cemiterios ON cemiterios.id_cemi = tumulos.id_cemi 
-        LEFT JOIN pessoas ON pessoas.id_pessoa = tumulos.id_pessoa where tumulos.id_ent = ${id_ent} and ${CONDICAO}`;
-        db.query(SQL, (err, result) => {
-            console.log(SQL)
+        LEFT JOIN pessoas ON pessoas.id_pessoa = tumulos.id_pessoa where tumulos.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows} `;
+        db.query(SQL, (err, result) => { console.log(SQL);
             if (err) { res.status(404).json('404!') }
             else res.send(result);
         });
     }
 });
-
-// app.get("/getAllTum/:id_ent", verify, (req, res) => {
-//     //const {pesqnome} = req.params;
-//     const { id_ent } = req.params;
-//     let sql = `select tumulos.id_tum,tumulos.cod_tum,tumulos.id_cemi, tumulos.id_pessoa, tumulos.conserv, tumulos.data_alt, tumulos.data_cad, tumulos.descricao, 
-//     tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt, tumulos.obs,tumulos.padrao,tumulos.tipo,tumulos.usu_cad,tumulos.area_terreno,tumulos.area_construida,
-//     tumulos.testada,tumulos.profundidade,tumulos.vl_total,tumulos.situacao,pessoas.id_pessoa, 
-//     pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.fixo,pessoas.email,cemiterios.id_cemi,cemiterios.nome_cemi FROM tumulos 
-//     LEFT JOIN cemiterios ON cemiterios.id_cemi = tumulos.id_cemi 
-//     LEFT JOIN pessoas ON pessoas.id_pessoa = tumulos.id_pessoa where tumulos.id_ent = ${id_ent} order by tumulos.cod_tum desc`;
-//     db.query(sql, (err, result) => {
-//         if (err) { res.status(404).json('404!') }
-//         else { res.send(result) }
-//     });
-// });
 
 app.get('/tumId/:id_tum/', verify, function (req, res) {
     const { id_tum } = req.params;
@@ -3705,7 +3736,7 @@ app.delete("/delTum/:id_tum/:usu_cad", verify, (req, res) => {
 app.post("/postTum", verify, async (req, res) => {
     let { id_ent, id_cemi, id_user, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao,
         inscricao, descricao, obs, usu_cad, data_cad, data_alt, area_terreno, area_construida,
-        testada, profundidade, vl_total, tx1, tx2, tx3, vl, desconto, situacao } = req.body; console.log(req.body)
+        testada, profundidade, tx1, tx2, tx3, vl, desconto, situacao } = req.body; 
     //const {data_cad} = Date.now();
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
@@ -3719,16 +3750,16 @@ app.post("/postTum", verify, async (req, res) => {
             db.query(SelCod, (err, result) => {
                 if (err) { res.status(404).json('404!') }
                 else { res.set(result[0]); }
-
+                let vl_total = parseFloat(vl) + parseFloat(tx1) + parseFloat(tx2) + parseFloat(tx3);
+       
                 let cod_tum = result[0].cod_tum + 1;
                 if (cod_tum) {
                     inscricao = cod_tum;
                     let SQL = `insert into tumulos (id_ent, cod_tum, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, inscricao, descricao, obs,usu_cad,data_cad,data_alt,area_terreno,area_construida,testada, profundidade, vl_total,tx1, tx2, tx3, vl, desconto,situacao) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
                     db.query(SQL, [id_ent, cod_tum, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, inscricao, descricao, obs, usu_cad, data_cad, data_alt, area_terreno, area_construida,
                         testada, profundidade, vl_total, tx1, tx2, tx3, vl, desconto, situacao], (err, result1) => {
-                            msg = "Salvo!";
                             if (err) { console.log(err) }
-                            else { res.json({ result1, msg }) }
+                            else { res.json({ result1, msg:'Salvo' }) }
                         });
                 } else {
                     console.log('Erro ao Gerar Codigo! linha:420')
@@ -3741,8 +3772,8 @@ app.post("/postTum", verify, async (req, res) => {
 /* update com as variaveis direto na boca do campo, não é vatagem tem que especificar se é strint ou int, com ? não precisa. */
 app.put("/putTum/", async (req, res) => {
     const { id_tum, id_cemi, id_user, id_pessoa, dst, st, qd, lt, tipo, conserv, padrao, inscricao, descricao, obs, usu_cad, data_alt, area_terreno, area_construida, testada,
-        profundidade, vl_total, tx1, tx2, tx3, vl, desconto, situacao } = req.body;
-    let Sql = `select role from usuarios where id_user = ${id_user}`; console.log(req.body)
+        profundidade, tx1, tx2, tx3, vl, desconto, situacao } = req.body;
+    let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!'); console.log(err) }
         else { res.set(result[0]) }
@@ -3750,6 +3781,7 @@ app.put("/putTum/", async (req, res) => {
         if (role === 3) {
             res.status(401).json('Usuário não autorizado')
         } else {
+              let vl_total = parseFloat(vl) + parseFloat(tx1) + parseFloat(tx2) + parseFloat(tx3);
             let sql = `update tumulos set id_cemi = ${id_cemi}, id_pessoa = ${id_pessoa}, dst = '${dst}',st = '${st}',qd = '${qd}',lt = '${lt}', tipo = ${tipo}, conserv = ${conserv}, padrao = ${padrao}, 
             inscricao = '${inscricao}', descricao = ${descricao}, obs = '${obs}',usu_cad = '${usu_cad}',data_alt = '${data_alt}',
             area_terreno = '${area_terreno}',area_construida = '${area_construida}',testada = '${testada}',profundidade = '${profundidade}',vl_total = '${vl_total}', tx1 = '${tx1}', tx2 = '${tx2}', tx3 = '${tx3}', vl = '${vl}', desconto = '${desconto}', situacao = '${situacao}' where id_tum = ${id_tum}`;
@@ -3762,10 +3794,10 @@ app.put("/putTum/", async (req, res) => {
     });
 }
 );
-//===========sepultamentos========//    
-app.post("/postSep", async (req, res) => {
-    const { id_ent, id_tum, cod_tum, id_user, id_pessoa, id_cemi, septdo, cpf_cnpj_septdo, familia, cov, cod_gaveta, descricao,
-        situacao_pgmto, cod_rec, data_cad, data_ncmto, data_sepmto, usu_cad } = req.body;
+//===========sepultamentos========//
+app.post("/sepPost", async (req, res) => {
+    const { id_ent, id_tum, cod_tum, id_user, id_pessoa_sep,id_pessoa, id_cemi,id_oper,septdo, cpf_cnpj_septdo, familia,filiacao,num_obito, cov, cod_gaveta, descricao,
+        situacao_pgmto, cod_rec, data_cad, data_ncmto, data_sepmto, usu_cad,id_assin1,id_assin2,id_assin3 } = req.body;
     //permissão de usuário
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
@@ -3775,6 +3807,12 @@ app.post("/postSep", async (req, res) => {
         if (role === 3) {
             res.status(401).json('Usuário não autorizado')
         } else {
+             let cod_rec = '4018';
+                                    let sql0 = `select receitas.valor,receitas.id_rec from receitas where receitas.cod_rec = ${cod_rec}`;
+                                    db.query(sql0, (err, receita) => {
+                                        if (err) { res.status(404).json('404: Receita 4018!'), console.log('err valor rec', err) }
+                                    else { //res.set(receita[0])                                       
+                                   
             //Gerar codigo do sepmto             
             let SelCod = `select max(cod_sep) as cod_sep FROM sepmtos WHERE id_ent = ${id_ent}`;
             db.query(SelCod, (err, result) => {
@@ -3784,44 +3822,72 @@ app.post("/postSep", async (req, res) => {
                 let cod_sep = result[0].cod_sep + 1;
                 id_lancmto = cod_sep;
                 if (id_lancmto) {
-                    let SQL = `insert into sepmtos (id_ent, id_tum,cod_tum,id_user, id_pessoa,id_cemi,cod_sep,septdo,cpf_cnpj_septdo,familia,cov,cod_gaveta,descricao,situacao_pgmto,id_lancmto,cod_rec,data_cad,data_ncmto,data_sepmto,usu_cad) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-                    db.query(SQL, [id_ent, id_tum, cod_tum, id_user, id_pessoa, id_cemi, cod_sep, septdo, cpf_cnpj_septdo, familia, cov, cod_gaveta, descricao, situacao_pgmto, id_lancmto, cod_rec, data_cad, data_ncmto, data_sepmto, usu_cad], (err, result2) => {
-                        msg = "Salvo!";
-                        if (err) { console.log('erro 401 2:', err); res.status(404).json('404!') }
-                        else { res.status(200).json({ result2, msg }) }
+                    let vl_total = receita[0].valor; let id_rec = receita[0].id_rec;
+                    let SQL = `insert into sepmtos (id_ent, id_tum,cod_tum,id_user,id_pessoa_sep, id_pessoa,id_cemi,id_oper,cod_sep,septdo,cpf_cnpj_septdo,familia,filiacao,num_obito,cov,cod_gaveta,descricao,situacao_pgmto,id_lancmto,cod_rec,data_cad,data_ncmto,data_sepmto,id_rec,vl_total,usu_cad,id_assin1,id_assin2,id_assin3) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+                    db.query(SQL, [id_ent, id_tum, cod_tum, id_user,id_pessoa_sep, id_pessoa, id_cemi,id_oper, cod_sep, septdo, cpf_cnpj_septdo, familia,filiacao,num_obito, cov, cod_gaveta, descricao, situacao_pgmto, id_lancmto, cod_rec, data_cad, data_ncmto, data_sepmto,id_rec,vl_total,usu_cad,id_assin1,id_assin2,id_assin3], (err, result2) => {
+                        if (err) { console.log('erro 401:', err); res.status(404).json('404!') }
+                        else {   
+                            let id_sep = result2.insertId;
+                            if (id_sep) {
+                                let sql1 = `select entidades.dias_venc from entidades where entidades.id_ent = ${id_ent}`;
+                                db.query(sql1, (err, entidad) => {
+                                 
+                                let SelCod = `select max(cod_lanc) as cod_lanc FROM lancmtos WHERE id_ent = ${id_ent}`;
+                                db.query(SelCod, (err, result) => {
+                                    if (err) { res.status(404).json('404!'), console.log('errLOG', err) }
+                                    else { res.set(result[0]) 
+                                    
+                                    let dataAtual = new Date(); 
+                                    dataAtual.setDate(dataAtual.getDate() + entidad[0].dias_venc);
+                                    let data_venc = dataAtual.toLocaleDateString('pt-BR');
+                                    let data_lanc = data_cad; 
+                                    let cod_lanc = result[0].cod_lanc + 1;
+                                    let valor_real = receita[0].valor; let id_rec = receita[0].id_rec; let valor_original = receita[0].valor;
+                                    let parc = '0'; let situacao = 'E'; let pago = 'N'; let cod_insc = cod_sep; let numero_proc = ("000000" + cod_sep).slice(-6) + '/' + new Date().getFullYear();
+                                    let referencia = id_sep; let exercicio = new Date().getFullYear();
+                                    let nossonum = exercicio + ("0000" + cod_rec).slice(-4) + ("000000" + cod_sep).slice(-6);
+                                    let desc_lanc = `VALOR REFERÊNTE TAXA DE SEPULTAMENTO: ${("000000" + cod_sep).slice(-6)}.`;
+                                    let sql2 = "insert into lancmtos (id_ent,cod_lanc,id_pessoa, id_user,cod_rec,id_rec,desc_lanc, valor_real,valor_original,parc,situacao,nossonum,pago,exercicio,cod_insc,numero_proc,data_lanc,data_venc, referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                    db.query(sql2, [id_ent, cod_lanc, id_pessoa, id_user, cod_rec,id_rec, desc_lanc, valor_real,valor_original, parc, situacao, nossonum, pago, exercicio, cod_insc, numero_proc,data_lanc, data_venc, referencia], (err1, result3) => {
+                                        if (err1) { res.status(404).json('404!'), console.log(err1) }
+                                        else { 
+                                            //res.set(result3[0]) 
+                                        let id_lanc = result3.insertId;
+                                        if (id_lanc) {
+                                            let cod_lancdet = id_lanc; 
+                                            let sql3 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,cod_rec,id_rec,valor_real, situacao,nossonum,pago,exercicio,cod_insc,numero_proc,referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                            db.query(sql3, [id_ent, cod_lancdet, id_pessoa, id_user, cod_rec,id_rec, valor_real, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, referencia], (err1, result4) => {
+                                                if (err1) {
+                                                    res.status(404).json('erro ao Gerar lancmto'); console.log(err1);
+                                                } else { 
+                                                    res.status(200).json({ id_sep, msg:'Salvo' })
+                                                }
+                                            });
+                                        } else { res.status(404).json('erro ao Gerar lancmto'); console.log('erro ao Gerar lancmto'); }
+                                    }
+                                    });
+                                   
+                                }
+                                });  
+                                    });//fim select dias vencimento
+
+                            }
+                        }
                     });
                 } else {
                     console.log('Erro ao selecionar codigo lancmtos.')
                 }
             });
+
+ }
+                                      });//fim select valor rec
         }
     });
 });
-//update com as variaveis com ? pra que o sql ainda associe o que é cada coluna. 
-app.put("/updSep1/", verify, async (req, res) => {
-    const { id_sep, id_user, familia, cov, cod_gaveta, descricao, data_alt, data_ncmto, data_sepmto, usu_cad } = req.body;
-    //const {data_cad} = Date.now();  
-    let Sql1 = `select role from usuarios where id_user = ${id_user}`;
-    db.query(Sql1, (err, result) => {
-        if (err) { res.status(404).json('404!') }
-        else { res.set(result[0]) }
-        role = result[0].role;
-        if (role === 3) {
-            res.status(401).json('Usuário não autorizado');
-        } else {
-            let sql2 = `update sepmtos set familia = ?, cov = ?,cod_gaveta = ?, descricao = ?, data_alt = ?, data_ncmto = ?, data_sepmto = ?, id_user = ?, usu_cad = ? where id_sep = ?`;
-            db.query(sql2, [id_sep, id_user, familia, cov, cod_gaveta, descricao, data_alt, data_ncmto, data_sepmto, usu_cad], (err, result1) => {
-                if (err) { res.status(404).json('404!') }
-                else { res.status(200).json("Alterado!") }
-                //else res.json({ result, msg });
-            });
-        }
-    });
-}
-);
+
 //update com as variaveis direto na coluna indicada.   
-app.put("/updSep/", async (req, res) => {
-    const { id_sep, id_user, familia, cov, cod_gaveta, descricao, data_alt, data_ncmto, data_sepmto, usu_cad } = req.body;
+app.put("/sepPut/", async (req, res) => {
+    const { id_sep, id_user, familia,filiacao,num_obito, cov, cod_gaveta, descricao,id_oper,data_alt, data_ncmto, data_sepmto, usu_cad } = req.body; console.log(req.body)
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!') }
@@ -3830,8 +3896,8 @@ app.put("/updSep/", async (req, res) => {
         if (role === 3) {
             res.status(401).json('Usuário não autorizado')
         } else {
-            console.log('1', id_sep)
-            let sql = `update sepmtos set familia = '${familia}', cod_gaveta = '${cod_gaveta}', cov = '${cov}', descricao = '${descricao}', data_alt = '${data_alt}', data_ncmto = '${data_ncmto}', data_sepmto = '${data_sepmto}', id_user = ${id_user}, usu_cad = '${usu_cad}' where id_sep = ${id_sep}`;
+            let sql = `update sepmtos set familia = '${familia}',num_obito = '${num_obito}',filiacao = '${filiacao}', cod_gaveta = '${cod_gaveta}', id_oper = '${id_oper}', cov = '${cov}', descricao = '${descricao}', 
+            data_alt = '${data_alt}', data_ncmto = '${data_ncmto}', data_sepmto = '${data_sepmto}', id_user = ${id_user}, usu_cad = '${usu_cad}' where id_sep = ${id_sep}`;
             db.query(sql, (err) => {
                 if (err) { res.status(404).json('404!') }
                 else res.status(200).json("Alterado!");
@@ -3842,14 +3908,44 @@ app.put("/updSep/", async (req, res) => {
 }
 );
 
-app.get("/sepmtos/:id_ent", verify, (req, res) => {
-    const { id_ent } = req.params;
-    let SQL = `select tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt,tumulos.tipo, pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,
-                pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.email,sepmtos.id_sep,sepmtos.cod_tum,sepmtos.cod_sep,sepmtos.septdo,sepmtos.cpf_cnpj_septdo,sepmtos.familia,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.situacao_pgmto,sepmtos.data_cad ,cemiterios.id_cemi,cemiterios.nome_cemi FROM sepmtos LEFT JOIN tumulos on tumulos.id_tum = sepmtos.id_tum 
-                LEFT JOIN cemiterios on cemiterios.id_cemi = sepmtos.id_cemi LEFT JOIN pessoas on pessoas.id_pessoa = sepmtos.id_pessoa where sepmtos.id_ent = ${id_ent} order by sepmtos.cod_sep desc`;
+app.post("/sepmtoPesq", verify, (req, res) => {
+    let { id_ent, campo, text1, text2, limit_rows } = req.body;
+    let CONDICAO = '';
+    if (!limit_rows) { limit_rows = 500 }
+    if (text1 === '*') { text1 = ''; text2 = '' }
+    switch (campo) {
+        case 'data_cad': CONDICAO = `sepmtos.data_cad between "${text1.replace('/','-')}" and "${text2.replace('/','-')}"`; break;
+        case 'cod_sep': CONDICAO = `sepmtos.cod_sep like '${text1}%'`; break;
+        case 'cod_tum': CONDICAO = `sepmtos.cod_tum like '${text1}%'`; break;
+        case 'nome_pessoa': CONDICAO = `sepmtos.septdo like "${text1}%" order by sepmtos.cod_sep desc`; break;
+        case 'cpf_cnpj': CONDICAO = `pessoas.cpf_cnpj_septdo like "${text1.replace(/[^0-9]/g, '')}%"`; break;
+    }
+    if (CONDICAO) {
+        SQL = `select tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt,tumulos.tipo, pessoas.id_pessoa, pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,
+                pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.email,sepmtos.id_sep,sepmtos.cod_tum,sepmtos.cod_sep,sepmtos.septdo,sepmtos.cpf_cnpj_septdo,
+                sepmtos.familia,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.situacao_pgmto,sepmtos.data_cad, sepmtos.vl_total,cemiterios.id_cemi,cemiterios.nome_cemi 
+                FROM sepmtos 
+                LEFT JOIN tumulos on tumulos.id_tum = sepmtos.id_tum 
+                LEFT JOIN cemiterios on cemiterios.id_cemi = sepmtos.id_cemi 
+                LEFT JOIN pessoas on pessoas.id_pessoa = sepmtos.id_pessoa 
+                where sepmtos.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`;
+        db.query(SQL, (err, result) => { console.log(SQL);
+            if (err) { res.status(404).json('404!') }
+            else{ res.send(result)}
+        });
+    }
+});
+
+app.get("/sepmtosId_tum/:id_tum", verify, (req, res) => {
+    const { id_tum } = req.params;
+    let SQL = `select tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt,tumulos.tipo, pessoas.id_pessoa, pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,
+                pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.email,sepmtos.id_sep,sepmtos.cod_tum,sepmtos.cod_sep,sepmtos.septdo,sepmtos.cpf_cnpj_septdo,
+                sepmtos.familia,sepmtos.filiacao,sepmtos.num_obito,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.situacao_pgmto,sepmtos.data_cad,sepmtos.data_ncmto,sepmtos.data_sepmto, cemiterios.id_cemi,cemiterios.nome_cemi FROM sepmtos LEFT JOIN tumulos on tumulos.id_tum = sepmtos.id_tum 
+                LEFT JOIN cemiterios on cemiterios.id_cemi = sepmtos.id_cemi LEFT JOIN pessoas on pessoas.id_pessoa = sepmtos.id_pessoa where sepmtos.id_tum = ${id_tum} 
+                order by sepmtos.cod_sep desc`;
     db.query(SQL, (err, result) => {
         if (err) { console.log(err); res.status(404).json('404!') }
-        else res.send(result);
+        else res.send(result); console.log(result)
     });
 });
 
@@ -3857,12 +3953,39 @@ app.get("/sepmto/:id_sep",
     //verify, 
     (req, res) => {
         const { id_sep } = req.params;
-        let SQL = `select tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt,tumulos.tipo, pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,
-                pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.email,sepmtos.id_sep,sepmtos.cod_tum,sepmtos.cod_sep,sepmtos.septdo,sepmtos.cpf_cnpj_septdo,sepmtos.familia,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.situacao_pgmto,sepmtos.data_cad ,cemiterios.id_cemi,cemiterios.nome_cemi FROM sepmtos LEFT JOIN tumulos on tumulos.id_tum = sepmtos.id_tum 
+        let SQL = `select tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt,tumulos.tipo, pessoas.id_pessoa, pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,
+                pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.email,sepmtos.id_sep,sepmtos.id_oper,sepmtos.cod_tum,sepmtos.cod_sep,sepmtos.septdo,sepmtos.cpf_cnpj_septdo,sepmtos.familia,
+                sepmtos.filiacao,sepmtos.num_obito,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.situacao_pgmto,sepmtos.data_cad,sepmtos.data_sepmto,sepmtos.data_ncmto,sepmtos.id_assin1,sepmtos.id_assin2,sepmtos.id_assin3,
+                cemiterios.id_cemi,cemiterios.nome_cemi FROM sepmtos LEFT JOIN tumulos on tumulos.id_tum = sepmtos.id_tum
                 LEFT JOIN cemiterios on cemiterios.id_cemi = sepmtos.id_cemi LEFT JOIN pessoas on pessoas.id_pessoa = sepmtos.id_pessoa where sepmtos.id_sep = ${id_sep}`;
-        db.query(SQL, (err, result) => {
+        db.query(SQL, (err, result) => { console.log(SQL);
             if (err) { res.status(404).json('404!') }
-            else { res.send(result) }
+            else { //res.send(result) 
+                res.set(result[0]);
+            let id_assin1 = result[0].id_assin1; let id_assin2 = result[0].id_assin2; let id_assin3 = result[0].id_assin3;
+            if (!id_assin1) { id_assin1 = 0 }
+            let sqla1 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin1}`;
+            db.query(sqla1, (err, assin1) => {
+                if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
+                else { res.set(assin1) }
+                if (!id_assin2) { id_assin2 = 0 }
+                let sqla2 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin2}`;
+                db.query(sqla2, (err, assin2) => {
+                    if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
+                    else { res.set(assin2) }
+                    if (!id_assin3) { id_assin3 = 0 }
+                    let sqla3 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin3}`;
+                    db.query(sqla3, (err, assin3) => {
+                        if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
+                        else {
+                            res.set(assin3)
+                            res.status(200).json({ result, assin1, assin2, assin3, msg: 'Salvo!' });
+                        }
+                    })
+                })
+            })
+
+            }
         });
     });
 
@@ -3878,7 +4001,6 @@ app.delete("/delSep/:id_sep/:usu_cad", verify, (req, res) => {
         } else {
             let SQL = `delete from sepmtos where id_sep = ${id_sep}`;
             db.query(SQL, (err) => {
-                console.log(id_sep, ',', usu_cad)
                 if (err) { res.status(405) }
                 else { res.status(200).json("Excluído!") }
             });
@@ -3892,17 +4014,17 @@ app.delete("/delSep/:id_sep/:usu_cad", verify, (req, res) => {
 // PROVIDE PROVIDE PROVIDE PROVIDE // inicio // em uso
 app.get("/EntCod/:cod_ent", (req, res) => {
     const { cod_ent } = req.params;
-    let SQL = `select id_ent,cod_ent,entidade,caminho,rua,numero,bairro,cidade,uf,email,cnpj,secretaria,telefone,exercicio,urlbras,urlperf,tributos,aliq_itbi,desconto_itbi,imp_itbi,bloq_aliq,venc_itbi,valor_taxa,desconto_antec,msg1,
+    let SQL = `select id_ent,cod_ent,entidade,caminho,rua,numero,bairro,cidade,uf,cep,email,cnpj,secretaria,fixo,telefone,exercicio,urlbras,urlperf,tributos,aliq_itbi,desconto_itbi,imp_itbi,bloq_aliq,venc_itbi,valor_taxa,desconto_antec,msg1,
     campo1_nome,campo2_nome,campo3_nome,campo4_nome,campo5_nome,campo6_nome,campo1_tam,campo2_tam,campo3_tam,tx1,tx2,tx3,ver,calc_imovel, desconto_iptu, vvi,maskinsc,insc_seq,maskgrupo,ativo,limit_rows from entidades where cod_ent = ${cod_ent}`;
     db.query(SQL, (err, result) => {
-        if (err) { return res.status(404).json('404!') }
+        if (err) { return res.status(404).json('Entidade não localizada!!') }
         else { res.json({ result }); }
     });
 });
 //get entidade por ID painel em uso 
 app.get("/EntId/:id_ent", (req, res) => {
     const { id_ent } = req.params;
-    let sqlEnti = `select cod_ent, id_ent, cnpj,rua,numero,bairro, cidade,uf,cep, usu_cad, entidade, telefone,email, fixo, data_cad, data_alt,caminho,vvi,desconto_iptu,insc_seq,
+    let sqlEnti = `select cod_ent, id_ent, cnpj,rua,numero,bairro, cidade,uf,cep, usu_cad, entidade, telefone,email, fixo,telefone, data_cad, data_alt,caminho,vvi,desconto_iptu,insc_seq,
     lei,secretaria,maskinsc,calc_imovel,decreto,msg4,msg1,msg2,msg3,cep,urlperf,urlbras,ativo,tributos,venc_unica,venc_antec,venc_dvexercicio,venc_dvtotal,
     campo1_nome,campo2_nome,campo3_nome,campo4_nome,campo5_nome,campo6_nome,campo1_tam,campo2_tam,campo3_tam,tx1, tx2, tx3,aliq_itbi,desconto_itbi,imp_itbi,bloq_aliq,venc_itbi,venc_itbi,venc_unica,
         venc_antec, venc_dvtotal,venc_dvexercicio,venc_unica_cemi,venc_antec_cemi,valor_taxa,desconto_antec,limit_rows from entidades where id_ent = ${id_ent}`;
@@ -3947,24 +4069,25 @@ app.put("/ajustes", verify, async (req, res) => {
 }
 );
 
-app.put("/entidade", verify, async (req, res) => {
+app.put("/entidade", verify, async (req, res) => { 
     const uploadUser1 = multer({
         storage: multer.diskStorage({
             destination: function (req, file, cb) {
                 cb(null, './public/upload/brasao')
             },
             filename: (req, file, cb) => {
-                cb(null, req.body.cod_ent + '.jpg');
+                cb(null, req.body.id_ent + '_' + req.body.cod_ent + '.jpg');
                 //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
             }
         })
     });
-    uploadUser1.single('arquivo')(req, res, function (err) {
+    uploadUser1.single('arquivo')(req, res, function (err) { console.log(req.body)
         let { id_ent, cod_ent, entidade, email, cnpj, rua, numero, bairro, cidade, uf, cep, secretaria, lei, decreto, msg4, msg1, msg2, msg3, usu_cad, telefone, fixo, data_alt,
             caminho, venc_unica, venc_antec, venc_dvexercicio, venc_dvtotal } = req.body;
+
         if (req.file) {
             caminho = req.file.filename;
-        } else { caminho = cod_ent + '.jpg'; }
+        } else { caminho = 'simg'; }
         let sql = `update entidades set entidade = '${entidade}',email = '${email}',cnpj = '${cnpj}',rua = '${rua}',numero = '${numero}',bairro = '${bairro}',cidade = '${cidade}',uf = '${uf}',cep = '${cep}',secretaria = '${secretaria}',lei = '${lei}',decreto = '${decreto}', 
         msg4 = '${msg4}', msg1 = '${msg1}', msg2 = '${msg2}',msg3 = '${msg3}', usu_cad = '${usu_cad}', telefone = '${telefone}',fixo = '${fixo}',data_alt = '${data_alt}',
          caminho = '${caminho}',venc_unica = '${venc_unica}', venc_antec = '${venc_antec}' ,venc_dvexercicio = '${venc_dvexercicio}',venc_dvtotal = '${venc_dvtotal}' where id_ent = ${id_ent}`;
@@ -3989,19 +4112,13 @@ app.put("/entidade2", async (req, res) => {
             filename: (req, file, cb) => {
                 cb(null, req.body.cod_ent + '.txt');
                 //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
-
-
             }
         })
     });
 
 
-
-
     uploadUser1.single('arquivo')(req, res, function (err) {
         let { id_ent, cod_ent, data_alt } = req.body;
-        console.log('2', req.file.path);
-
         // readFile(req.file.path, (err, data) /* callback */ => {
         //     console.log('4');
         //     if (err) {
@@ -4013,7 +4130,6 @@ app.put("/entidade2", async (req, res) => {
         //         console.log(data)
         // });
         caminho = req.file.path;
-        console.log(caminho)
         var fs = require('fs')
             , filename = req.file.path;
         fs.readFile('filenam.txt', 'utf8', function (err, data) {
@@ -4073,17 +4189,15 @@ app.post("/entidadeAdm/", verify, async (req, res) => {
         })
     });
     uploadUser1.single('arquivo')(req, res, function (err) {
-        const { cod_ent, entidade, cnpj, cidade, usu_cad, telefone, data_cad, urlbras, urlperf, ativo, tributos } = req.body;
+        let { cod_ent, entidade, cnpj, cidade, usu_cad, telefone, data_cad, urlbras, urlperf, ativo, tributos,caminho } = req.body;
         let Select = `select cod_ent as cod_ent FROM entidades WHERE cod_ent = ${cod_ent}`;
         db.query(Select, (err, result) => {
             if (err) { res.status(404).json('Erro 500!') }
             else {
                 if (!result[0]) {
-                    let caminho = '';
                     if (req.file) {
                         caminho = req.file.filename;
                     }
-                    console.log(req.body.cod_ent)
                     let calc_imovel = 'N'; let vvi = 'N'; let maskinsc = '1'; let insc_seq = 'N'; let desconto_iptu = 'N';
                     let venc_unica = '31/12/' + new Date().getFullYear(); let venc_antec = '31/12/' + new Date().getFullYear();
                     let venc_dvexercicio = '31/12/' + new Date().getFullYear(); let venc_dvtotal = '31/12/' + new Date().getFullYear();
@@ -4127,7 +4241,8 @@ app.delete("/entidade/:id_ent", verify, (req, res) => {
 app.get("/getAllEnt/", (req, res) => {
     let SQL = "select id_ent,cod_ent,entidade,email,cnpj,data_cad,data_alt,urlbras,ativo from entidades order by entidade asc";
     db.query(SQL, (err, result) => {
-        if (err) { res.json({ err })  }
+        //res.status(404).json("Registros não Encontrado!")
+        if (err) { console.log(err) }
         else { res.json({ result }) }
     });
 });
@@ -4294,17 +4409,18 @@ app.put("/banco", verify, async (req, res) => {
                 cb(null, './public/upload/brasao')
             },
             filename: (req, file, cb) => {
-                cb(null, req.body.id_ent + '_' + req.body.id_banco + '_bz' + '.jpg');
+                cb(null, req.body.id_ent + '_banco_' + req.body.id_banco + '.jpg');
                 //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
             }
         })
     });
     uploadUser1.single('arquivo')(req, res, function (err) {
-        const { id_ent, id_banco, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_alt, usu_cad } = req.body;
+        let { id_ent, id_banco, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_alt, brasao, usu_cad } = req.body;
         if (req.file) {
-            const brasao = req.file.filename;
+            brasao = req.file.filename;
+        } else {
+            brasao = 'simg';
         }
-        brasao = id_ent + '_' + id_banco + '_bz' + '.jpg';
         let sql = `update bancos set agencia = '${agencia}', conta= '${conta}', convenio= '${convenio}',cod_banco= '${cod_banco}', nome_banco= '${nome_banco}', local_pgto= '${local_pgto}',brasao= '${brasao}',ativo= '${ativo}',data_alt= '${data_alt}',usu_cad = '${usu_cad}' where id_banco = ${id_banco}`;
         db.query(sql, (err, result) => {
             if (err) { console.log('Erro Post:', err) }
@@ -4392,7 +4508,7 @@ app.put("/usuario", verify, async (req, res) => {
         })
     });
     uploadUser1.single('arquivo')(req, res, function (err) {
-        let { id_user, username, password, nome, role, prv, email, telefone, data_alt, ativo, imgperf } = req.body; console.log(req.body)
+        let { id_user, username, password, nome, role, prv, email, telefone, data_alt, ativo, imgperf } = req.body;
         if (req.file) {
             imgperf = req.file.filename;
             //  imgperf = id_ent + '_' + id_user + '.jpg';
@@ -4442,7 +4558,7 @@ app.post("/m4nut3", verify, async (req, res) => {
         if (username === 'Master' | role === 1 | prv === 1) {
             let sql1 = `${manute} where id_ent = ${id_ent}`; console.log(sql1)
             db.query(sql1, (err1, result1) => {
-                if (err1) { //console.log(err1);
+                if (err1) {
                     res.status(200).json({ err1, msg: "Operação Invalida!" })
                 } else { res.status(200).json({ result1, msg: "Feito!" }) }
             })
