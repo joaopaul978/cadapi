@@ -29,14 +29,14 @@ app.use(express.json());
     next();
 });*/
 
-const db = mysql.createPool({
-    // host:"localhost", <-- erro
-    host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
-});
-
 //const db = mysql.createPool({
-//    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+    // host:"localhost", <-- erro
+  //  host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
 //});
+
+const db = mysql.createPool({
+    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+});
 
 
 /*
