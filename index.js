@@ -31,8 +31,8 @@ app.use(express.json());
 
 
 const db = mysql.createPool({    
-    host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
-   // host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+    //host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
+    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
 });
 
 app.use(function (req, res, next) {
@@ -73,7 +73,7 @@ const { NOMEM } = require("dns");
 app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
 app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
 
-API = 'http://localhost:3001';
+API = 'https://cadapi-oz3i.vercel.app';
 
 const urlBras = `${API}/brasao/`;
 const urlPerf = API + '/perfil/';
