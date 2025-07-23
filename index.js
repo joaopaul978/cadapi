@@ -189,7 +189,6 @@ app.post('/login', function (req, res, next) {
 
     });
 });
-
 app.get('/pessoasIdlancAll/', async (req, res) => {
     let SQL = `select id_pessoa, nome_pessoa, cpf_cnpj from pessoas where id_ent = 1041`;
     db.query(SQL, (err, pessoa) => {
