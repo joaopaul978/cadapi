@@ -73,7 +73,7 @@ const { NOMEM } = require("dns");
 app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
 app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
 
-API = 'https://cadapi-oz3i.vercel.app';
+API = 'https://cadapi.vercel.app/';
 
 const urlBras = `${API}/brasao/`;
 const urlPerf = API + '/perfil/';
