@@ -57,7 +57,7 @@ app.listen(3001, () => console.log("Serviço rodando on port 3001."));
 //app.use(session({secret:'chavesecreta'}));
 app.use(express.json());
 app.use(cors());
-
+const patch = require('path');
 
 app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
 //app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
