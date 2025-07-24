@@ -59,7 +59,7 @@ app.use(express.json());
 app.use(cors());
 
 
-//app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
+app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
 //app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
 
 //API = 'http://localhost:3001';
