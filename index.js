@@ -4278,8 +4278,8 @@ app.post("/banco", verify, async (req, res) => {
     });
 }
 ); */
-
-// Multer upload config
+app.put("/banco", verify, async (req, res) => { 
+    // Multer upload config
 const fs = require('fs');
 const path = require('path');
 //const multer = require('multer');
@@ -4298,7 +4298,6 @@ const storage = multer.diskStorage({
 })
 const upload = multer({storage: storage});
 
-app.put("/banco", verify, async (req, res) => { 
     upload.single('arquivo')(req, res, function (err) {
        let { id_ent, id_banco, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_alt, brasao, usu_cad } = req.body;
         console.log('reqBanco',req.file)
