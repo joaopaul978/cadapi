@@ -4280,7 +4280,7 @@ app.post("/banco", verify, async (req, res) => {
 ); */ 
 const storage = multer.diskStorage({
    destination: function (req, file, cb) {
-                cb(null, './public/upload/brasao')
+                cb(null, './tmp')
             },
     filename: (req, file, cb) => {
                 cb(null, req.body.id_ent + '_banco_' + req.body.id_banco + '.jpg');
