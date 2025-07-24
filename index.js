@@ -31,8 +31,8 @@ app.use(express.json());
 
 
 const db = mysql.createPool({    
-    //host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
-    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+   // host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
+   host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
 });
 
 app.use(function (req, res, next) {
@@ -48,18 +48,9 @@ var corsOptions = {
     'sec-fetch-mode': 'cors',
     'sec-fetch-dest': 'empty',
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-
     //colocar nos endpoits
     //cors(corsOptions),
 }
-
-
-// if (db) {
-//     const port = 3001;
-//     app.listen(port, () => {
-//         console.log('Rodando na porta:', port);
-//     })
-// } else { console.log('Erro: Conexão com Banco de Dados') }
 
 app.get("/", (req, res) => res.send("Express on Vercel"));
 app.listen(3001, () => console.log("Serviço rodando on port 3001."));
@@ -71,12 +62,12 @@ app.use(cors());
 const patch = require('path');
 const { NOMEM } = require("dns");
 app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
-app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
+//app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
 
-API = 'https://cadapi.vercel.app/';
+API = 'http://localhost:3001';
 
 const urlBras = `${API}/brasao/`;
-const urlPerf = API + '/perfil/';
+//const urlPerf = API + '/perfil/';
 
 app.get('/versaoteste/', async (req, res) => {
     res.send('Serviço node: Versão erbeti rixa: ops, 1.0, aê Rita');
@@ -148,7 +139,7 @@ app.get('/getAllEnt2', function (req, res, next) {
 
 app.post('/login', function (req, res, next) {
     const { id_ent, username, password } = req.body;
-    let SqlEnt = `select id_ent,cod_ent,urlperf,urlbras,caminho,ver,ativo FROM entidades WHERE id_ent = ${id_ent}`;
+    let SqlEnt = `select id_ent,cod_ent,caminho,ver,ativo FROM entidades WHERE id_ent = ${id_ent}`;
     db.query(SqlEnt, (err, entd) => {
         if (err) { return res.status(404).json('404!') };
         if (entd[0].ativo === 'S') {
@@ -171,13 +162,12 @@ app.post('/login', function (req, res, next) {
                                     username: user[0].username,
                                     password: user[0].password,
                                     role: user[0].role,
-                                    urlperf: entd[0].urlperf,
                                     imgperf: user[0].imgperf,
                                     id_ent: entd[0].id_ent,
                                     cod_ent: entd[0].cod_ent,
                                     email: entd[0].email,                                   
                                     ver: entd[0].ver,
-                                    //imgbras: entd[0].urlbras + entd[0].caminho
+                                    imgbras: entd[0].urlbras + entd[0].caminho
                                 }, "Key999025",
                                     { expiresIn: "2h" }), msg
                             })
@@ -189,6 +179,7 @@ app.post('/login', function (req, res, next) {
 
     });
 });
+
 app.get('/pessoasIdlancAll/', async (req, res) => {
     let SQL = `select id_pessoa, nome_pessoa, cpf_cnpj from pessoas where id_ent = 1041`;
     db.query(SQL, (err, pessoa) => {
@@ -3998,7 +3989,7 @@ app.delete("/delSep/:id_sep/:usu_cad", verify, (req, res) => {
 // PROVIDE PROVIDE PROVIDE PROVIDE // inicio // em uso
 app.get("/EntCod/:cod_ent", (req, res) => {
     const { cod_ent } = req.params;
-    let SQL = `select id_ent,cod_ent,entidade,caminho,rua,numero,bairro,cidade,uf,cep,email,cnpj,secretaria,fixo,telefone,exercicio,urlbras,urlperf,tributos,aliq_itbi,desconto_itbi,imp_itbi,bloq_aliq,venc_itbi,valor_taxa,desconto_antec,msg1,
+    let SQL = `select id_ent,cod_ent,entidade,caminho,rua,numero,bairro,cidade,uf,cep,email,cnpj,secretaria,fixo,telefone,exercicio,urlbras,tributos,aliq_itbi,desconto_itbi,imp_itbi,bloq_aliq,venc_itbi,valor_taxa,desconto_antec,msg1,
     campo1_nome,campo2_nome,campo3_nome,campo4_nome,campo5_nome,campo6_nome,campo1_tam,campo2_tam,campo3_tam,tx1,tx2,tx3,ver,calc_imovel,stitulo, desconto_iptu, vvi,maskinsc,insc_seq,maskgrupo,ativo,limit_rows from entidades where cod_ent = ${cod_ent}`;
     db.query(SQL, (err, result) => {
         if (err) { return res.status(404).json('Entidade não localizada!!') }
@@ -4009,7 +4000,7 @@ app.get("/EntCod/:cod_ent", (req, res) => {
 app.get("/EntId/:id_ent", (req, res) => {
     const { id_ent } = req.params;
     let sqlEnti = `select cod_ent, id_ent, cnpj,rua,numero,bairro, cidade,uf,cep, usu_cad, entidade, telefone,email, fixo,telefone, data_cad, data_alt,caminho,vvi,desconto_iptu,insc_seq,
-    lei,secretaria,maskinsc,calc_imovel,decreto,msg4,msg1,msg2,msg3,cep,urlperf,urlbras,ativo,tributos,venc_unica,venc_antec,venc_dvexercicio,venc_dvtotal,
+    lei,secretaria,maskinsc,calc_imovel,decreto,msg4,msg1,msg2,msg3,cep,urlbras,ativo,tributos,venc_unica,venc_antec,venc_dvexercicio,venc_dvtotal,
     campo1_nome,campo2_nome,campo3_nome,campo4_nome,campo5_nome,campo6_nome,campo1_tam,campo2_tam,campo3_tam,tx1, tx2, tx3,aliq_itbi,desconto_itbi,imp_itbi,bloq_aliq,venc_itbi,venc_itbi,venc_unica,
         venc_antec, venc_dvtotal,venc_dvexercicio,venc_unica_cemi,venc_antec_cemi,valor_taxa,desconto_antec,limit_rows,stitulo from entidades where id_ent = ${id_ent}`;
     db.query(sqlEnti, (err, result) => {
@@ -4127,7 +4118,6 @@ app.put("/entidade2", async (req, res) => {
 }
 );
 
-
 //put painel adm em uso
 app.put("/entidadeAdm", verify, async (req, res) => {
     const uploadUser1 = multer({
@@ -4142,7 +4132,7 @@ app.put("/entidadeAdm", verify, async (req, res) => {
         })
     });
     uploadUser1.single('arquivo')(req, res, function (err) {
-        let { id_ent, cod_ent, entidade, cnpj, rua, cidade, usu_cad, telefone, data_alt, urlbras, urlperf, ativo, tributos,stitulo, caminho } = req.body;
+        let { id_ent, cod_ent, entidade, cnpj, rua, cidade, usu_cad, telefone, data_alt, urlbras, ativo, tributos,stitulo, caminho } = req.body;
         //let caminho = '';  
 
         if (req.file) {
@@ -4150,7 +4140,7 @@ app.put("/entidadeAdm", verify, async (req, res) => {
         }
         //caminho = cod_ent + '.jpg';    
         let sql = `update entidades set entidade = '${entidade}', cnpj = '${cnpj}',rua = '${rua}', cidade = '${cidade}', usu_cad = '${usu_cad}', telefone = '${telefone}', 
-        urlbras = '${urlbras}',urlperf = '${urlperf}',ativo = '${ativo}',tributos = '${tributos}',stitulo = '${stitulo}', data_alt = '${data_alt}', caminho = '${caminho}' where id_ent = ${id_ent}`;
+        urlbras = '${urlbras}',ativo = '${ativo}',tributos = '${tributos}',stitulo = '${stitulo}', data_alt = '${data_alt}', caminho = '${caminho}' where id_ent = ${id_ent}`;
         db.query(sql, (err, result) => {
             if (err) { res.status(404).json('404!'), console.log(err) }
             else { res.json({ id: id_ent, msg: 'Alterado!' }) }
@@ -4173,7 +4163,7 @@ app.post("/entidadeAdm/", verify, async (req, res) => {
         })
     });
     uploadUser1.single('arquivo')(req, res, function (err) {
-        let { cod_ent, entidade, cnpj, cidade, usu_cad, telefone, data_cad, urlbras, urlperf, ativo, tributos,stitulo,caminho } = req.body;
+        let { cod_ent, entidade, cnpj, cidade, usu_cad, telefone, data_cad, urlbras, ativo, tributos,stitulo,caminho } = req.body;
         let Select = `select cod_ent as cod_ent FROM entidades WHERE cod_ent = ${cod_ent}`;
         db.query(Select, (err, result) => {
             if (err) { res.status(404).json('Erro 500!') }
@@ -4194,10 +4184,10 @@ app.post("/entidadeAdm/", verify, async (req, res) => {
                     let msg4 = 'HÁ DÉBITOS ANTERIORES';
                     let limit_rows = '200'
 
-                    let sql = `insert into entidades (cod_ent, entidade, cnpj, cidade,usu_cad, telefone,data_cad,urlbras, urlperf,ativo,tributos,stitulo,caminho,
+                    let sql = `insert into entidades (cod_ent, entidade, cnpj, cidade,usu_cad, telefone,data_cad,urlbras,ativo,tributos,stitulo,caminho,
                     venc_unica,venc_antec,venc_dvexercicio,venc_dvtotal, calc_imovel,vvi,maskinsc,
-                    msg1,msg2,msg3,msg4,limit_rows, insc_seq,desconto_iptu,secretaria,exercicio) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-                    db.query(sql, [cod_ent, entidade, cnpj, cidade, usu_cad, telefone, data_cad, urlbras, urlperf, ativo, tributos,stitulo,caminho,
+                    msg1,msg2,msg3,msg4,limit_rows, insc_seq,desconto_iptu,secretaria,exercicio) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+                    db.query(sql, [cod_ent, entidade, cnpj, cidade, usu_cad, telefone, data_cad, urlbras, ativo, tributos,stitulo,caminho,
                         venc_unica, venc_antec, venc_dvexercicio, venc_dvtotal, calc_imovel, vvi, maskinsc,
                         msg1, msg2, msg3, msg4, limit_rows, insc_seq, desconto_iptu, secretaria, exercicio], (err, result) => {
                             if (err) { res.status(404).json('404!'); console.log(err) }
@@ -4476,7 +4466,7 @@ app.get("/usuario/:id_user", verify, (req, res) => {
     let SQL = `select id_ent, id_user,cod_user,username,password,nome,role,telefone,email,data_alt,prv,imgperf,ativo from usuarios where id_user = ${id_user}`;
     db.query(SQL, (err, result) => {
         if (err) { res.status(404).json('404!') }
-        else res.json({ result, urlPerf });
+        else res.json({ result });
     });
 });
 
@@ -4485,7 +4475,7 @@ app.get("/usuarios/:id_ent", verify, (req, res) => {
     let SQL = `select id_user,cod_user,username,nome,role,telefone,email,prv,imgperf,ativo from usuarios where id_ent = ${id_ent}`;
     db.query(SQL, (err, result) => {
         if (err) { res.status(404).json('404!') }
-        else res.json({ result, urlPerf });
+        else res.json({ result });
     });
 });
 
@@ -4522,7 +4512,7 @@ app.put("/usuario", verify, async (req, res) => {
     const uploadUser1 = multer({
         storage: multer.diskStorage({
             destination: function (req, file, cb) {
-                cb(null, './public/upload/perfil')
+                cb(null, './public/upload/brasao')
             },
             filename: (req, file, cb) => {
                 cb(null, req.body.id_ent + '_' + req.body.id_user + '.jpg');
