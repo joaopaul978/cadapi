@@ -31,8 +31,8 @@ app.use(express.json());
 
 
 const db = mysql.createPool({    
-   // host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
-   host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+    host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
+   // host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
 });
 
 app.use(function (req, res, next) {
@@ -59,14 +59,12 @@ app.listen(3001, () => console.log("Serviço rodando on port 3001."));
 app.use(express.json());
 app.use(cors());
 
-const patch = require('path');
-const { NOMEM } = require("dns");
-app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
+
+//app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
 //app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
 
-API = 'http://localhost:3001';
-
-const urlBras = `${API}/brasao/`;
+//API = 'http://localhost:3001';
+//const urlBras = `${API}/brasao/`;
 //const urlPerf = API + '/perfil/';
 
 app.get('/versaoteste/', async (req, res) => {
@@ -124,18 +122,6 @@ const generateAccesToken = (user) => {
 const generateRefreshToken = (user) => {
     return jwt.sign({ id: user.id, prv: user.prv }, "myRefreshSecretKey");
 }
-
-app.get('/getAllEnt2', function (req, res, next) {
-    console.log('req.headers', req.headers)
-    // Handle the get for this route
-    let SQL = "select id_ent,cod_ent,entidade,email,cnpj,data_cad,data_alt,urlbras,ativo from entidades order by entidade asc";
-    db.query(SQL, (err, result) => {
-        //res.status(404).json("Registros não Encontrado!")
-        if (err) { console.log(err) }
-        else { res.json({ result }) }
-    });
-});
-
 
 app.post('/login', function (req, res, next) {
     const { id_ent, username, password } = req.body;
@@ -422,44 +408,11 @@ app.get('/buscaCEP/:cep', (req, res) => {
             if (error) { res.status(404).json('Limit atingido aguarde 3 min!'); }
         })
 });
-/* ------------------------------------------------------------------------------------COPIA DE PESSOAS POST
-app.post("/pessoa", verify, async (req, res) => {
-    const { id_ent, id_user, nome, cpf_cnpj, email, telefone,fixo, rua, numero, bairro, cidade, uf,cep, data_cad, usu_cad } = req.body;
-    let cod_pessoa;  
-    let Sql = `select role from usuarios where id_user = ${id_user}`;
-    db.query(Sql, (err, result) => {
-        if (err) {res.status(404).json('404!')}
-        else {res.set(result[0])}
-        role = result[0].role;
-        if (role === 3) {
-            res.statusCode(401).json('Usuário não autorizado')
-        } else {                       
-                    let SelCod = `select max(cod_pessoa) as cod_pessoa FROM pessoas WHERE id_ent = ${id_ent}`;
-                    db.query(SelCod, (err, result) => {
-                        if (err) {res.status(404).json('404!4')}
-                        else {res.set(result[0])}                
-                        cod_pessoa = result[0].cod_pessoa + 1;
-                        if (cod_pessoa) { 
-                            let SQL = "insert into pessoas (id_ent, cod_pessoa, nome, cpf_cnpj, email, telefone,fixo, rua, numero, bairro, cidade, uf,cep, data_cad, usu_cad) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                            db.query(SQL, [id_ent, cod_pessoa, nome, cpf_cnpj, email, telefone,fixo, rua, numero, bairro, cidade, uf,cep, data_cad, usu_cad], (err1, result2) => {
-                                msg = "Salvo!";
-                                if (err1) { res.status(404).json('404!5'),console.log(err1)}
-                                else {res.status(201).json({ result2, msg })}
-                            });
-                        } else {
-                            console.log('Erro ao Gerar Codigo!')
-                        }
-               }); 
-        }
-    });
-}); */
+
 app.post("/pessoa", verify, async (req, res) => {
     let { id_ent, id_user, nome_pessoa, fantasia, cpf_cnpj, email, telefone, fixo, rua, numero, bairro, cidade, uf, cep, tipocad, situacao_cad, porte, vigilancia, obs, cod_natureza, ultima_atualizacao, complemento, site, area_mercantil, numero_proc, data_encerramento, data_abertura, data_cad, usu_cad,
         insc_muni, insc_estad, insc_junta, cod_segmentoativ, classetrib, cod_cnae, cod_cnae_grupo, iss, iss_retido, tx_virgilancia, alvara, alvara_trans, ativsecund, socios } = req.body;
 
-    //let socios = req.body; console.log('socios:',socios)
-    //let nome2 = socios.nome; console.log('',nome2)
-    //  let insc_muni = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!') }
@@ -622,7 +575,7 @@ app.post("/pessoasPesq", verify, (req, res) => {
     if (CONDICAO) {
         SQL = `select pessoas.id_pessoa,pessoas.tipocad, pessoas.cod_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, pessoas.cep, pessoas.rua,pessoas.numero,pessoas.email,pessoas.telefone,pessoas.fixo,
     pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`;
-        db.query(SQL, (err, result) => { console.log(SQL)
+        db.query(SQL, (err, result) => {
             if (err) { res.status(404).json('404!') }
             else res.send(result);
         });
@@ -707,34 +660,6 @@ app.post("/ITBIPost", async (req, res) => {
 
                             }
 
-                            /* let id_itbi = result2.insertId;  if (id_itbi) {   
-                                    let slq2 = `select itbi.id_ent, itbi.cod_itbi,itbi.inscricao, itbi.id_vendedor, itbi.id_comprador, itbi.cpf_cnpj_comprador, itbi.cpf_cnpj_vendedor, itbi.exercicio, itbi.pago, 
-                                itbi.negocio_juridico, itbi.nome_comprador, itbi.nome_vendedor, itbi.num_processo, itbi.obs_itbi, itbi.oficio, itbi.tipo_localizacao, itbi.tipo_lanc, itbi.transferido, itbi.usu_cad, 
-                                itbi.aliq_avaliacao,itbi.aliq_itbi, itbi.valor_avaliado, itbi.valor_itbi,itbi.valor_nj, itbi.valor_pago, itbi.valor_total, itbi.data_cad, itbi.data_emissao,emissao, itbi.data_pgmto,
-                                itbi.id_assin1, itbi.id_assin2 from itbi where itbi.id_itbi = ${id_itbi}`;
-                                    db.query(slq2, (err, result) => {
-                                        if (err) { res.status(404).json('404!'); console.log(err) }
-                                        else {
-                                            if (!id_assin1) { id_assin1 = 0 }
-                                            let sqla1 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin1}`;
-                                            db.query(sqla1, (err, assin1) => {
-                                                if (err) { res.status(404).json('404!2'), console.log(err) }
-                                                else { res.set(assin1) }
-                                                if (!id_assin2) { id_assin2 = 0 }
-    
-                                                let sqla3 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin2}`;
-                                                db.query(sqla3, (err, assin2) => {
-                                                    if (err) { res.status(404).json('404!2'), console.log(err) }
-                                                    else {
-                                                        res.set(assin2)
-                                                        res.status(200).json({ result, assin1, assin2 });
-                                                    }
-                                                })
-    
-                                            })
-                                        }
-                                    });
-                                } else { res.status(404).json('Erro ao Cadastrar!') } */
                         }
                     });
             }
@@ -1156,50 +1081,6 @@ app.post("/alvaraPost", async (req, res) => {
 }
 );
 
-// app.post("/alvaraPost", async (req, res) => {
-//     const { id_ent, id_pessoa, id_user, data_emissao, num_processo, tipo_alvara, data_validade, exercicio, num_dam, obs_alvara,
-//         recolhimento, placa, anofabricacao, chassis, cor_veiculo, modelo_veiculo, obs_veiculo, emissao } = req.body; console.log('22', req.body)
-
-//     let sql = `select exercicio FROM alvaras WHERE id_pessoa = ${id_pessoa} and exercicio = ${exercicio} and emissao = 'E'`;
-//     db.query(sql, (err, result) => {
-//         let resSelc = result;
-//         const selectAlv = () => {
-//             let slq2 = `select id_ent,id_alvara,cod_alvara,id_pessoa,id_user,data_emissao,num_processo,tipo_alvara,data_validade,exercicio,num_dam,obs_alvara,recolhimento,placa,anofabricacao,chassis,cor_veiculo,modelo_veiculo,obs_veiculo,emissao from alvaras where id_pessoa = ${id_pessoa} order by id_alvara desc`;
-//             db.query(slq2, (err, result) => {
-//                 if (err) { res.status(404).json('404!') }
-//                 else {
-//                     if (!resSelc) {
-//                         res.status(201).json({ result, msg: 'Salvo!' })
-//                     } else {
-//                         res.status(203).json({ result, msg: 'Alvará Já Existente!' })
-//                     }
-//                 }
-//             });
-//         }
-//         if (!resSelc) {
-//             let SelCod = `select max(cod_alvara) as cod_alvara FROM alvaras WHERE id_ent = ${id_ent}`;
-//             db.query(SelCod, (err, result) => {
-//                 if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
-//                 else { res.set(result[0]) }
-
-//                 let cod_alvara = result[0].cod_alvara + 1;
-//                 if (cod_alvara) {
-//                     let sql2 = `insert into alvaras (id_ent,cod_alvara,id_pessoa,id_user,data_emissao,num_processo,tipo_alvara,data_validade,exercicio,num_dam,obs_alvara,
-//                         recolhimento,placa,anofabricacao,chassis,cor_veiculo,modelo_veiculo,obs_veiculo,emissao) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-//                     db.query(sql2, [id_ent, cod_alvara, id_pessoa, id_user, data_emissao, num_processo, tipo_alvara, data_validade, exercicio, num_dam, obs_alvara,
-//                         recolhimento, placa, anofabricacao, chassis, cor_veiculo, modelo_veiculo, obs_veiculo, emissao], (err1, result) => {
-//                             if (err1) { res.status(404).json('404!'), console.log(err1) }
-//                             else {
-//                                 selectAlv();
-//                             }
-//                         });
-//                 }
-//             })
-//         } else { selectAlv() }
-//     })
-// }
-// );
-
 app.get("/alvaras/:id_pessoa", verify, (req, res) => {
     const { id_pessoa } = req.params;
     let SQL = `select id_ent,id_alvara,id_pessoa,id_user,data_emissao,num_processo,tipo_alvara,data_validade,exercicio,num_dam,obs_alvara,recolhimento,placa,anofabricacao,chassis,cor_veiculo,modelo_veiculo,obs_veiculo,emissao from alvaras where id_pessoa = ${id_pessoa} order by id_alvara desc`;
@@ -1615,7 +1496,6 @@ app.get("/calctESTE/", async (req, res) => {
 
     const vTit = valorTitulo;
     //let jurosCalculados = 0;
-
     if (diasAtraso > 0) { //apenas calcula juros quando há dias em atraso
         diasEmAtraso = diasAtraso;
         juros = vTit * 0.05 / 30 * diasAtraso;
@@ -1627,10 +1507,8 @@ app.get("/calctESTE/", async (req, res) => {
     else { //se não tem dias em atraso os juros continuam a 0
         diasEmAtraso = 0;
     }
-
     //juros.values = jurosCalculados.toFixed(2);
     valorTotal = vTit + juros + multa;
-
     console.log(dataVenc, dataPag);
     console.log('Dias Atraso', diasEmAtraso)
     console.log('juros', juros.toFixed(2));
@@ -2169,7 +2047,7 @@ app.post('/lancmtos_dams', async (req, res) => {
     left join pessoas on lancmtos.id_pessoa = pessoas.id_pessoa 
     left join receitas on lancmtos.id_rec = receitas.id_rec 
     where lancmtos.id_ent = ${id_ent} and ${CONDICAO3} and ${CONDICAO6} and ${CONDICAO} and ${CONDICAO2} and ${CONDICAO4} and ${CONDICAO5}
-    order by lancmtos.cod_lanc asc`;  console.log(SQL);
+    order by lancmtos.cod_lanc asc`; ;
     db.query(SQL, (err, result) => {
         if (err) { res.status(404).json('Sem Dados!!'); }
         else { res.send(result) }
@@ -2701,9 +2579,6 @@ app.get("/pessoaId/:id_pessoa", verify, (req, res) => {
     pessoas.regime_trib,pessoas.obs,pessoas.obs_encerramento,pessoas.cod_natureza,pessoas.ultima_atualizacao, pessoas.complemento,pessoas.site,pessoas.area_mercantil,
     pessoas.numero_proc,pessoas.data_encerramento, pessoas.insc_muni,pessoas.insc_estad,pessoas.insc_junta,pessoas.cod_segmentoativ,pessoas.classetrib,pessoas.cod_cnae,
     pessoas.cod_cnae_grupo,pessoas.iss,pessoas.iss_retido,pessoas.tx_virgilancia,pessoas.alvara,pessoas.alvara_trans from pessoas where pessoas.id_pessoa = ${id_pessoa}`;
-
-    /*let sqlTum = `select tumulos.id_tum,tumulos.cod_tum, tumulos.id_pessoa,tumulos.st,tumulos.qd,tumulos.lt,tumulos.tipo,tumulos.data_cad, cemiterios.nome_cemi from tumulos 
-    left join pessoas on tumulos.id_pessoa = pessoas.id_pessoa left join cemiterios on tumulos.id_cemi = cemiterios.id_cemi where tumulos.id_pessoa = ${id_pessoa}`; */
 
     let sqlAtiv = `select pessoas_ativ_cnae.id_ativ, pessoas_ativ_cnae.code,atividades_cnae.descricao_cnae from pessoas_ativ_cnae left join atividades_cnae on pessoas_ativ_cnae.code = atividades_cnae.cod_cnae where pessoas_ativ_cnae.id_pessoa = ${id_pessoa}`;
     let sqlSocios = `select pessoas_socios.id_socios,pessoas_socios.nome,pessoas_socios.cpf_cnpj, pessoas_socios.qual from pessoas_socios where pessoas_socios.id_pessoa = ${id_pessoa}`;
@@ -3277,7 +3152,7 @@ app.post("/imoveisPesq", (req, res) => {
         imoveis.area_terreno,imoveis.area_construida,imoveis.valor_venal,imoveis.valor_total,imoveis.pago,imoveis.situacao, imoveis.cod_log, imoveis.lote, imoveis.quadra, imoveis.tipo_imovel, imoveis.valor_total,imoveis.tipo_localizacao, pessoas.id_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, 
         (select sum(dividas.valor_total) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as divida_total FROM imoveis 
         LEFT JOIN logradouros ON logradouros.id_log = imoveis.id_log LEFT JOIN loteamentos ON loteamentos.id_lote = imoveis.id_lote LEFT JOIN pessoas ON pessoas.id_pessoa = imoveis.id_pessoa 
-        where imoveis.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`; console.log(sql)
+        where imoveis.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`;
         db.query(sql, (err, result) => { 
             if (err) { res.status(404).json('404!'); console.log(err) }
             else res.send(result);
@@ -3669,7 +3544,7 @@ app.post("/tumulosPesq", verify, (req, res) => {
         pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.fixo,pessoas.email,cemiterios.id_cemi,cemiterios.nome_cemi FROM tumulos 
         LEFT JOIN cemiterios ON cemiterios.id_cemi = tumulos.id_cemi 
         LEFT JOIN pessoas ON pessoas.id_pessoa = tumulos.id_pessoa where tumulos.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows} `;
-        db.query(SQL, (err, result) => { console.log(SQL);
+        db.query(SQL, (err, result) => {;
             if (err) { res.status(404).json('404!') }
             else res.send(result);
         });
@@ -3904,7 +3779,7 @@ app.post("/sepmtoPesq", verify, (req, res) => {
                 LEFT JOIN cemiterios on cemiterios.id_cemi = sepmtos.id_cemi 
                 LEFT JOIN pessoas on pessoas.id_pessoa = sepmtos.id_pessoa 
                 where sepmtos.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`;
-        db.query(SQL, (err, result) => { console.log(SQL);
+        db.query(SQL, (err, result) => {;
             if (err) { res.status(404).json('404!') }
             else{ res.send(result)}
         });
@@ -3933,7 +3808,7 @@ app.get("/sepmto/:id_sep",
                 sepmtos.filiacao,sepmtos.num_obito,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.situacao_pgmto,sepmtos.data_cad,sepmtos.data_sepmto,sepmtos.data_ncmto,sepmtos.id_assin1,sepmtos.id_assin2,sepmtos.id_assin3,
                 cemiterios.id_cemi,cemiterios.nome_cemi FROM sepmtos LEFT JOIN tumulos on tumulos.id_tum = sepmtos.id_tum
                 LEFT JOIN cemiterios on cemiterios.id_cemi = sepmtos.id_cemi LEFT JOIN pessoas on pessoas.id_pessoa = sepmtos.id_pessoa where sepmtos.id_sep = ${id_sep}`;
-        db.query(SQL, (err, result) => { console.log(SQL);
+        db.query(SQL, (err, result) => {;
             if (err) { res.status(404).json('404!') }
             else { //res.send(result) 
                 res.set(result[0]);
@@ -4557,7 +4432,6 @@ app.delete("/usuario/:id_user/:id_user2", verify, (req, res) => {
         });
     }
 });
-
 //Manutenção
 app.post("/m4nut3", verify, async (req, res) => {
     const { id_user, manute, id_ent } = req.body;
