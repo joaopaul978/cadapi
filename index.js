@@ -177,7 +177,7 @@ app.post('/login', function (req, res, next) {
                                     cod_ent: entd[0].cod_ent,
                                     email: entd[0].email,                                   
                                     ver: entd[0].ver,
-                                    imgbras: entd[0].urlbras + entd[0].caminho
+                                    //imgbras: entd[0].urlbras + entd[0].caminho
                                 }, "Key999025",
                                     { expiresIn: "2h" }), msg
                             })
