@@ -4277,12 +4277,7 @@ app.post("/banco", verify, async (req, res) => {
         });
     });
 }
-); */
-app.put("/banco", verify, async (req, res) => { 
-    // Multer upload config
-const fs = require('fs');
-const path = require('path');
-//const multer = require('multer');
+); */ 
 const storage = multer.diskStorage({
    destination: function (req, file, cb) {
                 cb(null, './public/upload/brasao')
@@ -4290,30 +4285,29 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => {
                 cb(null, req.body.id_ent + '_banco_' + req.body.id_banco + '.jpg');
                 //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
-            }
-    /* filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
-    } */
+            }    
 })
-const upload = multer({storage: storage});
+ const upload = multer({storage: storage});
 
-    upload.single('arquivo')(req, res, function (err) {
-       let { id_ent, id_banco, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_alt, brasao, usu_cad } = req.body;
+app.put('/banco', upload.single('arquivo'), (req, res) => {
+  // req.file contém informações sobre o arquivo enviado
+  // req.body contém os dados do formulário (se houver)   
+        const fs = require('fs');
+const path = require('path');
+
+        let { id_banco, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_alt, brasao, usu_cad } = req.body;
         console.log('reqBanco',req.file)
-        if (req.file) {
+if (req.file) {
             brasao = req.file.filename;
         } else {
             brasao = 'simg';
-        }
+        }        
         let sql = `update bancos set agencia = '${agencia}', conta= '${conta}', convenio= '${convenio}',cod_banco= '${cod_banco}', nome_banco= '${nome_banco}', local_pgto= '${local_pgto}',brasao= '${brasao}',ativo= '${ativo}',data_alt= '${data_alt}',usu_cad = '${usu_cad}' where id_banco = ${id_banco}`;
         db.query(sql, (err, result) => {
             if (err) { console.log('Erro Post:', err) }
             else { res.status(201).json({ id_banco, msg: 'Atualizado!' }) }
         });
-    });
-}
-);
+});
 
 app.delete("/banco/:id_banco/:id_user", verify, (req, res) => {
     const { id_banco, id_user } = req.params;
