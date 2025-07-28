@@ -29,9 +29,10 @@ app.use(express.json());
     next();
 });*/
 
+
 const db = mysql.createPool({    
-   // host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
-    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+    //host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
+   host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
 });
 
 app.use(function (req, res, next) {
@@ -57,14 +58,22 @@ app.listen(3001, () => console.log("Serviço rodando on port 3001."));
 //app.use(session({secret:'chavesecreta'}));
 app.use(express.json());
 app.use(cors());
-const patch = require('path');
 
+const patch = require('path');
 app.use('/brasao', express.static(patch.resolve(__dirname, "public", "upload/brasao")));
 //app.use('/perfil', express.static(patch.resolve(__dirname, "public", "upload/perfil")));
 
 //API = 'http://localhost:3001';
 //const urlBras = `${API}/brasao/`;
 //const urlPerf = API + '/perfil/';
+
+ /* const storage = multer.diskStorage({
+   destination: function (req, file, cb) {
+                cb(null, './public/upload/brasao') },            
+    filename: (req, file, cb) => {
+                cb(null, req.body.id_ent + '_banco_' + req.body.id_banco + '.jpg'); }    
+})
+ const upload = multer({storage: storage,limits: { fileSize: 2000000, files: 1 }}); */
 
 app.get('/versaoteste/', async (req, res) => {
     res.send('Serviço node: Versão erbeti rixa: ops, 1.0, aê Rita');
@@ -1166,11 +1175,15 @@ app.post("/logradouro/", verify, async (req, res) => {
         else { res.set(result[0]) }
         role = result[0].role;
         if (role === 1) {
-            let SelCodLog = `select max(cod_log) as cod_log FROM logradouros WHERE id_ent = ${id_ent}`;
-            db.query(SelCodLog, (err, result) => {
-                if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
-                else { res.set(result[0]) }
-                let cod_log = result[0].cod_log + 1;
+            let Select = `select logradouros.cep_log FROM logradouros WHERE id_ent = ${id_ent} and logradouros.cep_log = ${cep_log}`;
+            db.query(Select, (err, result2) => {
+                let resSelc = result2.length;
+                if (!resSelc) {
+                let SelCodLog = `select max(cod_log) as cod_log FROM logradouros WHERE id_ent = ${id_ent}`;
+            db.query(SelCodLog, (err, result3) => {
+                if (err) { res.status(404).json('404!2')}
+                else { res.set(result3[0]) }
+                let cod_log = result3[0].cod_log + 1;
                 if (cod_log) {
                     let SQLL = "insert into logradouros (id_ent, id_user,cod_log, nome_log,cep_log, bairro_log, cidade_log, uf_log,valor_m2, aliq_terreno, aliq_construcao,ft_terreno,ft_construcao, data_cad,obs, usu_cad) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
                     db.query(SQLL, [id_ent, id_user, cod_log, nome_log, cep_log, bairro_log, cidade_log, uf_log, valor_m2, aliq_terreno, aliq_construcao, ft_terreno, ft_construcao, data_cad,obs, usu_cad], (err1, result1) => {
@@ -1179,6 +1192,9 @@ app.post("/logradouro/", verify, async (req, res) => {
 
                     });
                 }
+            }); }else {
+            res.status(203).json({ msg: 'CEP já cadastrado!' })
+        }
             });
         } else {
             res.status(401).json('Usuário Não autorizado!');
@@ -1472,51 +1488,6 @@ app.delete("/delDivida/:id_user/:id_divida/:id_imovel", verify, (req, res) => {
     });
 });
 
-app.get("/calctESTE/", async (req, res) => {
-    // const [dataVenc, dataPag, valorTitulo, despesas, diasEmAtraso, juros, valorTotal] = 
-    // document.querySelectorAll("'31/01/2023', '31/12/2023', 100, 2, 0, 0, 0");
-
-    let dataVenc = '01/01/2024';
-    // var currentDate = new Date()
-    //                                 var day = currentDate.getDate()
-    //                                 var month = currentDate.getMonth() + 1
-    //                                 var year = currentDate.getFullYear()
-    // let dataPag = month + "/" + day + "/" + year;
-    let dataPag = new Date().toLocaleDateString('pt-BR');
-    //let dataPag = new Date().toLocaleDateString("en", {year:"numeric", day:"2-digit", month:"2-digit"}); 
-    let valorTitulo = 100;
-    let despesas = '8';
-    let diasEmAtraso = 0; let juros = 0; multa = 0; correcao = 0; let valorTotal = 0;
-
-    //d1 = new Date(dataVenc); d2 = new Date(dataPag);
-
-    //const diasAtraso = (d1 - d2) / (1000 * 3600 * 24); 
-    const diasAtraso = (new Date(dataPag).getTime() - new Date(dataVenc).getTime()) / (1000 * 3600 * 24);
-
-    const vTit = valorTitulo;
-    //let jurosCalculados = 0;
-    if (diasAtraso > 0) { //apenas calcula juros quando há dias em atraso
-        diasEmAtraso = diasAtraso;
-        juros = vTit * 0.05 / 30 * diasAtraso;
-        multa = vTit * 2 / 100;
-        //correcao = vTit * 2 * 12 / 100;
-        atrasoCorr = diasAtraso / 30;
-        correcao = vTit * 1.5 * atrasoCorr;
-    }
-    else { //se não tem dias em atraso os juros continuam a 0
-        diasEmAtraso = 0;
-    }
-    //juros.values = jurosCalculados.toFixed(2);
-    valorTotal = vTit + juros + multa;
-    console.log(dataVenc, dataPag);
-    console.log('Dias Atraso', diasEmAtraso)
-    console.log('juros', juros.toFixed(2));
-    console.log('multa', multa.toFixed(2));
-    console.log('correcao', correcao.toFixed(2));
-    //console.log('correcao',correcao2.toFixed(2));
-    console.log('valoBase', vTit);
-    console.log('valorTotal', valorTotal.toFixed(2));
-});
 app.put("/calcDivida/:id_imovel", verify, async (req, res) => {
     const { id_imovel } = req.params;
     let Sql1 = `select dividas.id_divida from dividas WHERE dividas.id_imovel = ${id_imovel} and dividas.pago = 'N' order by dividas.exercicio asc`;
@@ -3882,28 +3853,13 @@ app.get("/EntId/:id_ent", (req, res) => {
         else { res.json({ result }) }
     });
 });
-// app.get("/entidade/:id_ent", (req, res) => {
-//     const { id_ent } = req.params;
-//     let SQL = `select id_ent, cod_ent, entidade, email, cidade, secretaria,lei, decreto, exercicio, cnpj, msg, msg1, campo1_nome, campo1_tam, campo2_nome, campo2_tam,campo3_nome,campo3_tam,campo4_nome,
-//     campo4_tam,campo5_nome,campo5_tam,tx1,tx2,tx3, telefone, data_alt,ativo ver from entidades where id_ent = ${id_ent}`;
-//     db.query(SQL, (err, result) => {
-//         if (err) { res.status(404).json('404!') }
-//         else { res.status(200).json({ result }); }
-//         //res.json(result,urlBras);
-//     });
-// });
+
 
 app.put("/ajustes", verify, async (req, res) => {
     let { id_ent, calc_imovel, desconto_iptu, vvi, insc_seq, maskinsc, maskgrupo, usu_cad,
         campo1_nome, campo1_tam, campo2_nome, campo2_tam, campo3_nome, campo3_tam, campo4_nome, campo5_nome, campo6_nome, tx1, tx2, tx3, data_alt, aliq_itbi, desconto_itbi, imp_itbi, bloq_aliq, venc_itbi, venc_unica,
         venc_antec, venc_dvtotal, venc_dvexercicio, venc_unica_cemi, venc_antec_cemi, valor_taxa, desconto_antec, limit_rows } = req.body;
-    // venc_itbi = venc_itbi.split('-').reverse().join('/');
-    // venc_unica = venc_unica.split('-').reverse().join('/');
-    // venc_antec = venc_antec.split('-').reverse().join('/');
-    // venc_dvtotal = venc_dvtotal.split('-').reverse().join('/');
-    // venc_dvexercicio = venc_dvexercicio.split('-').reverse().join('/');
-    // venc_unica_cemi = venc_unica_cemi.split('-').reverse().join('/');
-    // venc_antec_cemi = venc_antec_cemi.split('-').reverse().join('/');
+
     let sql = `update entidades set calc_imovel = '${calc_imovel}',desconto_iptu = '${desconto_iptu}',vvi = '${vvi}',insc_seq = '${insc_seq}',maskinsc = '${maskinsc}',maskgrupo = '${maskgrupo}',usu_cad = '${usu_cad}',
         campo1_nome = '${campo1_nome}',campo1_tam = '${campo1_tam}',campo2_nome = '${campo2_nome}',campo2_tam = '${campo2_tam}',campo3_nome = '${campo3_nome}',
         campo3_tam = '${campo3_tam}',campo4_nome = '${campo4_nome}',campo5_nome = '${campo5_nome}',campo6_nome = '${campo6_nome}',tx1 = '${tx1}',tx2 = '${tx2}',tx3 = '${tx3}', data_alt = '${data_alt}',
@@ -3918,138 +3874,46 @@ app.put("/ajustes", verify, async (req, res) => {
 }
 );
 
-app.put("/entidade", verify, async (req, res) => { 
-    const uploadUser1 = multer({
-        storage: multer.diskStorage({
-            destination: function (req, file, cb) {
-                cb(null, './public/upload/brasao')
-            },
-            filename: (req, file, cb) => {
-                cb(null, req.body.id_ent + '_' + req.body.cod_ent + '.jpg');
-                //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
-            }
-        })
-    });
-    uploadUser1.single('arquivo')(req, res, function (err) {
+app.put("/entidade", verify, async (req, res) => {
+  
         let { id_ent, entidade, email, cnpj, rua, numero, bairro, cidade, uf, cep, secretaria, lei, decreto, msg4, msg1, msg2, msg3, usu_cad, 
-            telefone, fixo, data_alt, caminho } = req.body;
-console.log('reqFile:',req.file)
-        if (req.file) {
-            caminho = req.file.filename;
-        } else { caminho = 'simg'; }
+            telefone, fixo, data_alt } = req.body; 
         let sql = `update entidades set entidade = '${entidade}',email = '${email}',cnpj = '${cnpj}',rua = '${rua}',numero = '${numero}',bairro = '${bairro}',cidade = '${cidade}',uf = '${uf}',cep = '${cep}',secretaria = '${secretaria}',lei = '${lei}',decreto = '${decreto}', 
-        msg4 = '${msg4}', msg1 = '${msg1}', msg2 = '${msg2}',msg3 = '${msg3}', usu_cad = '${usu_cad}', telefone = '${telefone}',fixo = '${fixo}',data_alt = '${data_alt}',
-         caminho = '${caminho}' where id_ent = ${id_ent}`;
+        msg4 = '${msg4}', msg1 = '${msg1}', msg2 = '${msg2}',msg3 = '${msg3}', usu_cad = '${usu_cad}', telefone = '${telefone}',
+        fixo = '${fixo}',data_alt = '${data_alt}' where id_ent = ${id_ent}`;
         db.query(sql, (err, result) => {
             if (err) { res.status(404).json('404!'), console.log(err) }
-            else {
-                res.status(200).json(result);
-            }
-        });
-    });
-}
-);
-//TENTATIVA DE LÊ TXT
-const { readFile } = require('fs');
-
-app.put("/entidade2", async (req, res) => {
-    const uploadUser1 = multer({
-        storage: multer.diskStorage({
-            destination: function (req, file, cb) {
-                cb(null, './public/upload/brasao')
-            },
-            filename: (req, file, cb) => {
-                cb(null, req.body.cod_ent + '.txt');
-                //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
-            }
-        })
-    });
-
-
-    uploadUser1.single('arquivo')(req, res, function (err) {
-        let { id_ent, cod_ent, data_alt } = req.body;
-        // readFile(req.file.path, (err, data) /* callback */ => {
-        //     console.log('4');
-        //     if (err) {
-        //         res.status(500).send(err);
-        //         return;
-        //     }    
-        //     res.set({ 'Content-Type': 'text/plain' }).send(data);             
-
-        //         console.log(data)
-        // });
-        caminho = req.file.path;
-        var fs = require('fs')
-            , filename = req.file.path;
-        fs.readFile('filenam.txt', 'utf8', function (err, data) {
-            if (err) throw err;
-            console.log('OK: ' + filename);
-            console.log(data)
-        });
-
-
-    });
-}
-);
+            else { res.status(200).json(result) }
+        });   
+});
 
 //put painel adm em uso
 app.put("/entidadeAdm", verify, async (req, res) => {
-    const uploadUser1 = multer({
-        storage: multer.diskStorage({
-            destination: function (req, file, cb) {
-                cb(null, './public/upload/brasao')
-            },
-            filename: (req, file, cb) => {
-                cb(null, req.body.cod_ent + '.jpg');
-                //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
-            }
-        })
-    });
-    uploadUser1.single('arquivo')(req, res, function (err) {
+ 
         let { id_ent, cod_ent, entidade, cnpj, rua, cidade, usu_cad, telefone, data_alt, urlbras, ativo, tributos,stitulo, caminho } = req.body;
-        //let caminho = '';  
-
-        if (req.file) {
-            caminho = req.file?.filename;
-        }
-        //caminho = cod_ent + '.jpg';    
         let sql = `update entidades set entidade = '${entidade}', cnpj = '${cnpj}',rua = '${rua}', cidade = '${cidade}', usu_cad = '${usu_cad}', telefone = '${telefone}', 
         urlbras = '${urlbras}',ativo = '${ativo}',tributos = '${tributos}',stitulo = '${stitulo}', data_alt = '${data_alt}', caminho = '${caminho}' where id_ent = ${id_ent}`;
         db.query(sql, (err, result) => {
             if (err) { res.status(404).json('404!'), console.log(err) }
             else { res.json({ id: id_ent, msg: 'Alterado!' }) }
         });
-    });
+    
 }
 );
 //em uso
 app.post("/entidadeAdm/", verify, async (req, res) => {
-    const uploadUser1 = multer({
-        storage: multer.diskStorage({
-            destination: function (req, file, cb) {
-                cb(null, './public/upload/brasao')
-            },
-            filename: (req, file, cb) => {
-                //cb(null, req.body.cod_ent + "_" + file.originalname); // exemplo de mudar nome arq
-                cb(null, req.body.cod_ent + '.jpg');
-                //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
-            }
-        })
-    });
-    uploadUser1.single('arquivo')(req, res, function (err) {
-        let { cod_ent, entidade, cnpj, cidade, usu_cad, telefone, data_cad, urlbras, ativo, tributos,stitulo,caminho } = req.body;
+
+        let { cod_ent, entidade, cnpj, cidade, usu_cad, telefone, data_cad, urlbras, ativo, tributos,stitulo } = req.body;
         let Select = `select cod_ent as cod_ent FROM entidades WHERE cod_ent = ${cod_ent}`;
         db.query(Select, (err, result) => {
             if (err) { res.status(404).json('Erro 500!') }
             else {
                 if (!result[0]) {
-                    if (req.file) {
-                        caminho = req.file.filename;
-                    }
+                    //if (req.file) {caminho = req.file.filename}
                     let calc_imovel = 'N'; let vvi = 'N'; let maskinsc = '1'; let insc_seq = 'N'; let desconto_iptu = 'N';
                     let venc_unica = '31/12/' + new Date().getFullYear(); let venc_antec = '31/12/' + new Date().getFullYear();
                     let venc_dvexercicio = '31/12/' + new Date().getFullYear(); let venc_dvtotal = '31/12/' + new Date().getFullYear();
-                    let exercicio = new Date().getFullYear();
+                    let exercicio = new Date().getFullYear(); let caminho = 'simg';
                     let secretaria = 'Secretária de Administração e Finanças';
                     let msg1 = 'O NOSSO MUNICIPIO PRECISA DE VOCÊ PARA O DESENVOLVIMENTO';
                     let msg2 = 'Sr. CONTRIBUINTE, PAGUE SEU IPTU E ALVARA ATÉ O VENCIMENTO';
@@ -4069,8 +3933,7 @@ app.post("/entidadeAdm/", verify, async (req, res) => {
                         });
                 } else { res.status(401).json('Entidade já Cadastrada!') }
             }
-        });
-    });
+        });   
 });
 // em uso
 app.delete("/entidade/:id_ent", verify, (req, res) => {
@@ -4234,12 +4097,13 @@ app.get("/bancos/:id_ent", verify, (req, res) => {
 });
 
 app.post("/banco", verify, async (req, res) => {
-    const { id_ent, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, brasao, ativo, data_cad, usu_cad } = req.body;
+    const { id_ent, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_cad, usu_cad } = req.body;
     let SelectBanco = `select cod_banco as cod_banco FROM bancos WHERE id_ent = ${id_ent} and cod_banco = '${cod_banco}'`;
     db.query(SelectBanco, (err, result) => {
         if (err) { res.status(404).json('Erro 404!') }
         else {
             if (!result[0]) {
+                let brasao = cod_banco +'.jpg';
                 let sql = "insert into bancos (id_ent, agencia, conta, convenio,cod_banco, nome_banco, local_pgto,brasao,ativo,data_cad,usu_cad) values (?,?,?,?,?,?,?,?,?,?,?)";
                 db.query(sql, [id_ent, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, brasao, ativo, data_cad, usu_cad], (err, result) => {
                     if (err) { { res.status(404).json('4043!') }; console.log(err) }
@@ -4250,64 +4114,17 @@ app.post("/banco", verify, async (req, res) => {
     });
 }
 );
-/* app.put("/banco", verify, async (req, res) => {
-    const uploadUser1 = multer({
-        storage: multer.diskStorage({
-            destination: function (req, file, cb) {
-                cb(null, './public/upload/brasao')
-            },
-            filename: (req, file, cb) => {
-                cb(null, req.body.id_ent + '_banco_' + req.body.id_banco + '.jpg');
-                //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
-            }
-        })
-    });
-    uploadUser1.single('arquivo')(req, res, function (err) {
-        let { id_ent, id_banco, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_alt, brasao, usu_cad } = req.body;
-        console.log('reqBanco',req.file)
-        if (req.file) {
-            brasao = req.file.filename;
-        } else {
-            brasao = 'simg';
-        }
-        let sql = `update bancos set agencia = '${agencia}', conta= '${conta}', convenio= '${convenio}',cod_banco= '${cod_banco}', nome_banco= '${nome_banco}', local_pgto= '${local_pgto}',brasao= '${brasao}',ativo= '${ativo}',data_alt= '${data_alt}',usu_cad = '${usu_cad}' where id_banco = ${id_banco}`;
+
+app.put('/banco', (req, res) => { 
+        let { id_banco, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_alt, usu_cad } = req.body;
+        let sql = `update bancos set agencia = '${agencia}', conta= '${conta}', convenio= '${convenio}',cod_banco= '${cod_banco}', 
+        nome_banco= '${nome_banco}', local_pgto= '${local_pgto}',brasao= '${cod_banco}.jpg',ativo= '${ativo}',data_alt= '${data_alt}',
+        usu_cad = '${usu_cad}' where id_banco = ${id_banco}`;
         db.query(sql, (err, result) => {
             if (err) { console.log('Erro Post:', err) }
             else { res.status(201).json({ id_banco, msg: 'Atualizado!' }) }
-        });
-    });
-}
-); */ 
-const storage = multer.diskStorage({
-   destination: function (req, file, cb) {
-                cb(null, './tmp')
-            },
-    filename: (req, file, cb) => {
-                cb(null, req.body.id_ent + '_banco_' + req.body.id_banco + '.jpg');
-                //console.log('?? req.bdy.dados vindo antes, n sei porque funciona???:',req.body.cod_ent)
-            }    
-})
- const upload = multer({storage: storage});
+}); });
 
-app.put('/banco', upload.single('arquivo'), (req, res) => {
-  // req.file contém informações sobre o arquivo enviado
-  // req.body contém os dados do formulário (se houver)   
-        const fs = require('fs');
-const path = require('path');
-
-        let { id_banco, agencia, conta, convenio, cod_banco, nome_banco, local_pgto, ativo, data_alt, brasao, usu_cad } = req.body;
-        console.log('reqBanco',req.file)
-if (req.file) {
-            brasao = req.file.filename;
-        } else {
-            brasao = 'simg';
-        }        
-        let sql = `update bancos set agencia = '${agencia}', conta= '${conta}', convenio= '${convenio}',cod_banco= '${cod_banco}', nome_banco= '${nome_banco}', local_pgto= '${local_pgto}',brasao= '${brasao}',ativo= '${ativo}',data_alt= '${data_alt}',usu_cad = '${usu_cad}' where id_banco = ${id_banco}`;
-        db.query(sql, (err, result) => {
-            if (err) { console.log('Erro Post:', err) }
-            else { res.status(201).json({ id_banco, msg: 'Atualizado!' }) }
-        });
-});
 
 app.delete("/banco/:id_banco/:id_user", verify, (req, res) => {
     const { id_banco, id_user } = req.params;
@@ -4437,8 +4254,8 @@ app.post("/m4nut3", verify, async (req, res) => {
         if (username === 'Master' | role === 1 | prv === 1) {
             let sql1 = ``; 
             // 'se entidade for 999025 (id_ent = 1)'
-            if(id_ent === 1){sql1 = `${manute}`}
-            else{sql1 = `${manute} and id_ent = ${id_ent}`}
+            if(id_ent === 1){sql1 = `${manute}`
+            }else{sql1 = `${manute} and id_ent = ${id_ent}`}
              console.log(sql1)
             db.query(sql1, (err1, result1) => {
                 if (err1) {
