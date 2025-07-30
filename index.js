@@ -31,8 +31,8 @@ app.use(express.json());
 
 
 const db = mysql.createPool({    
-    //host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
-    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+    host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
+   // host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
 });
 
 app.use(function (req, res, next) {
@@ -570,19 +570,25 @@ app.put("/pessoa/", verify, async (req, res) => {
 );
 
 app.post("/pessoasPesq", verify, (req, res) => {
-    let { id_ent, campo, text1, text2, limit_rows } = req.body;
+    let { id_ent, campo, text1, text2,op_tipocad, limit_rows } = req.body;
     let CONDICAO = '';
+    let CONDICAO6 = '';
     if (text1 === '*') { text1 = ''; text2 = '' }
     if (!limit_rows) { limit_rows = 500 }
     switch (campo) {
-        case 'data_cad': CONDICAO = `pessoas.data_cad between "${text1.replace('/','-')}" and "${text2.replace('/','-')}" order by pessoas.cod_pessoa`; break;
-        case 'cod_pessoa': CONDICAO = `pessoas.cod_pessoa like '${text1}%' order by pessoas.cod_pessoa`; break;
-        case 'nome_pessoa': CONDICAO = `pessoas.nome_pessoa like "${text1}%" order by pessoas.cod_pessoa`; break;
-        case 'cpf_cnpj': CONDICAO = `pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%" order by pessoas.cod_pessoa`; break;
+        case 'data_cad': CONDICAO = `and pessoas.data_cad between "${text1.replace('/','-')}" and "${text2.replace('/','-')}" order by pessoas.cod_pessoa`; break;
+        case 'cod_pessoa': CONDICAO = `and pessoas.cod_pessoa like '${text1}%' order by pessoas.cod_pessoa`; break;
+        case 'nome_pessoa': CONDICAO = `and pessoas.nome_pessoa like "${text1}%" order by pessoas.cod_pessoa`; break;
+        case 'cpf_cnpj': CONDICAO = `and pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%" order by pessoas.cod_pessoa`; break;
+    }
+    switch (op_tipocad) {
+        case 'C': CONDICAO6 = `and pessoas.tipocad = 'C'`; break;
+        case 'E': CONDICAO6 = `and pessoas.tipocad = 'E'`; break;
+        case 'T': CONDICAO6 = `and pessoas.tipocad in ('C','E')`; break;
     }
     if (CONDICAO) {
         SQL = `select pessoas.id_pessoa,pessoas.tipocad, pessoas.cod_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, pessoas.cep, pessoas.rua,pessoas.numero,pessoas.email,pessoas.telefone,pessoas.fixo,
-    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`;
+    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} ${CONDICAO6} ${CONDICAO} limit ${limit_rows}`;
         db.query(SQL, (err, result) => {
             if (err) { res.status(404).json('404!') }
             else res.send(result);
@@ -3657,6 +3663,91 @@ app.put("/putTum/", async (req, res) => {
     });
 }
 );
+app.post("/alvaratum", async (req, res) => {
+    let { id_ent, id_pessoa, id_user,id_tum, data_emissao,data_cad, num_processo, tipo_alvara, data_validade, num_dam, obs_alvara,
+      emissao, id_assin1, id_assin2, id_assin3 } = req.body; console.log('22', req.body)
+
+            let SelCod = `select max(cod_alvara) as cod_alvara FROM tumulos_alvaras WHERE id_ent = ${id_ent}`;
+            db.query(SelCod, (err, result) => {
+                if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
+                else { res.set(result[0]) }
+
+                let cod_alvara = result[0].cod_alvara + 1;
+                if (cod_alvara) {
+                    if (!num_processo) { num_processo = ("000000" + cod_alvara).slice(-6) + '/' + new Date().getFullYear() }
+                    let sql2 = `insert into tumulos_alvaras (id_ent,cod_alvara,id_pessoa,id_user,id_tum,data_emissao,data_cad,num_processo,tipo_alvara,data_validade,num_dam,obs_alvara,
+                        id_assin1,id_assin2,id_assin3) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+                    db.query(sql2, [id_ent, cod_alvara, id_pessoa, id_user,id_tum, data_emissao.split('/').reverse().join('-'),data_cad, num_processo, tipo_alvara, data_validade, num_dam, obs_alvara,
+                      emissao, id_assin1, id_assin2, id_assin3], (err1, result) => {
+                            if (err1) { res.status(404).json('404!'), console.log(err1) }
+                            else {
+                                res.status(201).json({ result, msg: 'Salvo!' })
+                            }
+                        });
+                }          
+    })
+}
+);
+app.get("/alvarasTumulos/:id_ent/:id_tum", async (req, res) => {
+    const { id_ent, id_tum } = req.params;
+    let sql1 = `select id_alvara,id_ent,cod_alvara,id_pessoa,id_user,id_tum,data_emissao,data_cad,num_processo,tipo_alvara,data_validade,num_dam,obs_alvara,
+                        id_assin1,id_assin2,id_assin3 from tumulos_alvaras where id_tum = ${id_tum} order by id_alvara desc`;
+    db.query(sql1, (err, result) => {
+        let sql2 = `select assinaturas.id_assin, assinaturas.nome,assinaturas.cargo, assinaturas.matricula from assinaturas where assinaturas.id_ent = ${id_ent} and assinaturas.ativo = 'S'`;
+        db.query(sql2, (err, result_assin) => {
+            if (err) { console.log(err) }
+            else { res.set({ result_assin }); }
+            if (err) { res.status(404).json('404!') }
+            else { res.status(200).json({ result, result_assin }) }
+        });
+    });
+});
+
+app.get("/alvaraIdTum/:id_alvara", async (req, res) => {
+    const { id_alvara } = req.params;
+    let slq2 = `select tumulos_alvaras.id_alvara,tumulos_alvaras.cod_alvara,tumulos_alvaras.id_pessoa,tumulos_alvaras.id_user,tumulos_alvaras.data_emissao,tumulos_alvaras.num_processo,
+    tumulos_alvaras.tipo_alvara,tumulos_alvaras.data_validade, tumulos_alvaras.num_dam,tumulos_alvaras.obs_alvara,tumulos_alvaras.emissao,tumulos_alvaras.id_assin1,tumulos_alvaras.id_assin2,tumulos_alvaras.id_assin3 
+    from tumulos_alvaras 
+             where tumulos_alvaras.id_alvara = ${id_alvara}`;
+    db.query(slq2, (err, result) => {
+        if (err) { res.status(404).json('404!') }
+        else {
+            res.set(result[0]);
+            let id_assin1 = result[0].id_assin1; let id_assin2 = result[0].id_assin2; let id_assin3 = result[0].id_assin3;
+            if (!id_assin1) { id_assin1 = 0 }
+            let sqla1 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin1}`;
+            db.query(sqla1, (err, assin1) => {
+                if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
+                else { res.set(assin1) }
+                if (!id_assin2) { id_assin2 = 0 }
+                let sqla2 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin2}`;
+                db.query(sqla2, (err, assin2) => {
+                    if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
+                    else { res.set(assin2) }
+                    if (!id_assin3) { id_assin3 = 0 }
+                    let sqla3 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin3}`;
+                    db.query(sqla3, (err, assin3) => {
+                        if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
+                        else {
+                            res.set(assin3)
+                            res.status(200).json({ result, assin1, assin2, assin3, msg: 'Salvo!' });
+                        }
+                    })
+                })
+            })
+        }
+    });
+
+});
+app.delete("/delAlvaraTum/:id/:id_tum", async (req, res) => {
+    const { id, id_tum } = req.params;
+    let sql = `update tumulos_alvaras set emissao = 'C' where id_alvara = ${id}`;
+    db.query(sql, (err1, result) => {
+        if (err1) { res.status(404).json('404!'), console.log(err1) }
+        else res.status(200).json({ id_tum });
+    })
+}
+);
 //===========sepultamentos========//
 app.post("/sepPost", async (req, res) => {
     const { id_ent, id_tum, cod_tum, id_user, id_pessoa_sep,id_pessoa, id_cemi,id_oper,septdo, cpf_cnpj_septdo, familia,filiacao,num_obito, cov, cod_gaveta, descricao,
@@ -4336,7 +4427,7 @@ app.put("/usuario", verify, async (req, res) => {
         })
     });
     uploadUser1.single('arquivo')(req, res, function (err) {
-        let { id_user, username, password, nome, role, prv, email, telefone, data_alt, ativo, imgperf } = req.body;
+        let { id_user, username, password, nome, role, prv, email, telefone, data_alt, ativo, imgperf } = req.body; console.log(req.body)
         if (req.file) {
             imgperf = req.file.filename;
             //  imgperf = id_ent + '_' + id_user + '.jpg';
