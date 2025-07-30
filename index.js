@@ -31,8 +31,8 @@ app.use(express.json());
 
 
 const db = mysql.createPool({    
-    host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
-   // host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
+   // host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
+    host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"
 });
 
 app.use(function (req, res, next) {
