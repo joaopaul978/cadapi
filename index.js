@@ -3873,7 +3873,7 @@ app.post("/tumulosPesq", verify, (req, res) => {
 app.get('/tumId/:id_tum/', verify, function (req, res) {
     const { id_tum } = req.params;
     let sql = `select tumulos.id_tum,tumulos.cod_tum,tumulos.inscricao,tumulos.id_cemi, tumulos.id_pessoa,tumulos.conserv, tumulos.data_alt, tumulos.data_cad, tumulos.descricao, 
-    tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt, tumulos.obs,tumulos.padrao,tumulos.tipo,tumulos.usu_cad,tumulos.area_terreno,tumulos.area_construida,
+    tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt, tumulos.obs,tumulos.padrao,isencao,tumulos.tipo,tumulos.usu_cad,tumulos.area_terreno,tumulos.area_construida,
     tumulos.testada,tumulos.profundidade,tumulos.vl_total,tumulos.tx1,tumulos.tx2,tumulos.tx3,tumulos.vl,tumulos.desconto,tumulos.situacao,pessoas.id_pessoa, 
     pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.fixo,pessoas.email,cemiterios.id_cemi,cemiterios.nome_cemi FROM tumulos LEFT JOIN cemiterios ON cemiterios.id_cemi = tumulos.id_cemi 
     LEFT JOIN pessoas ON pessoas.id_pessoa = tumulos.id_pessoa where tumulos.id_tum = ${id_tum}`;
@@ -3903,7 +3903,7 @@ app.delete("/delTum/:id_tum/:usu_cad", verify, (req, res) => {
 });
 
 app.post("/postTum", verify, async (req, res) => {
-    let { id_ent, id_cemi, id_user, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, descricao, obs, usu_cad, data_cad,
+    let { id_ent, id_cemi, id_user, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao,isencao, descricao, obs, usu_cad, data_cad,
         data_alt, area_terreno, area_construida, testada, profundidade, tx1, tx2, tx3, vl, desconto, situacao } = req.body;
     //const {data_cad} = Date.now();
     let inscricao = `${st + qd + lt}`;
@@ -3939,9 +3939,9 @@ app.post("/postTum", verify, async (req, res) => {
                                 vl = receita[0].valor;                           
                             } 
                         let vl_total = parseFloat(vl) + parseFloat(tx1) + parseFloat(tx2) + parseFloat(tx3);                           
-                            let SQL = `insert into tumulos (id_ent, cod_tum,inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, descricao, obs,usu_cad,data_cad,data_alt,area_terreno,area_construida,
-                    testada, profundidade, vl_total,tx1, tx2, tx3, vl, desconto,situacao) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-                            db.query(SQL, [id_ent, cod_tum, inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, descricao, obs, usu_cad, data_cad, data_alt, area_terreno, area_construida,
+                            let SQL = `insert into tumulos (id_ent, cod_tum,inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao,isencao, descricao, obs,usu_cad,data_cad,data_alt,area_terreno,area_construida,
+                    testada, profundidade, vl_total,tx1, tx2, tx3, vl, desconto,situacao) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+                            db.query(SQL, [id_ent, cod_tum, inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao,isencao, descricao, obs, usu_cad, data_cad, data_alt, area_terreno, area_construida,
                                 testada, profundidade, vl_total, tx1, tx2, tx3, vl, desconto, situacao], (err, result1) => {
                                     if (err) { console.log(err) }
                                     else {
@@ -4005,7 +4005,7 @@ app.post("/postTum", verify, async (req, res) => {
 });
 
 app.put("/putTum/", verify, async (req, res) => {
-    const { id_tum, id_cemi, id_user, id_pessoa, dst, st, qd, lt, tipo, conserv, padrao, descricao, obs, usu_cad, data_alt, area_terreno, area_construida, testada,
+    const { id_tum, id_cemi, id_user, id_pessoa, dst, st, qd, lt, tipo, conserv, padrao,isencao, descricao, obs, usu_cad, data_alt, area_terreno, area_construida, testada,
         profundidade, tx1, tx2, tx3, vl, desconto, situacao } = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
@@ -4017,7 +4017,7 @@ app.put("/putTum/", verify, async (req, res) => {
         } else {
             let inscricao = `${st + qd + lt}`;
             let vl_total = parseFloat(vl) + parseFloat(tx1) + parseFloat(tx2) + parseFloat(tx3);
-            let sql = `update tumulos set id_cemi = ${id_cemi}, id_pessoa = ${id_pessoa}, dst = '${dst}',st = '${st}',qd = '${qd}',lt = '${lt}', tipo = ${tipo}, conserv = ${conserv}, padrao = ${padrao}, 
+            let sql = `update tumulos set id_cemi = ${id_cemi}, id_pessoa = ${id_pessoa}, dst = '${dst}',st = '${st}',qd = '${qd}',lt = '${lt}', tipo = ${tipo}, conserv = ${conserv}, padrao = ${padrao},isencao = ${isencao}, 
             inscricao = '${inscricao}', descricao = ${descricao}, obs = '${obs}',usu_cad = '${usu_cad}',data_alt = '${data_alt}',
             area_terreno = '${area_terreno}',area_construida = '${area_construida}',testada = '${testada}',profundidade = '${profundidade}',vl_total = '${vl_total}', tx1 = '${tx1}', tx2 = '${tx2}', tx3 = '${tx3}', vl = '${vl}', desconto = '${desconto}', situacao = '${situacao}' where id_tum = ${id_tum}`;
             db.query(sql, (err) => {
