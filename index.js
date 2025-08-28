@@ -30,7 +30,7 @@ app.use(express.json());
 });*/
 
 
-const db = mysql.createPool({    
+const db = mysql.createPool({
     // host: '127.0.0.1', port: "3306", user: "root", password: "", database: "dados"
     host: 'elmar.dnsalias.net', database: "999025_gestaotumulos", port: "3306", user: "joaopaulo", password: "2V3uesrKHfbZZQpZEtpJ"
     //host: 'sql10.freesqldatabase.com', port: "3306", user: "sql10778989", password: "dRce4fvNsc", database: "sql10778989"    
@@ -430,7 +430,7 @@ app.post("/pessoa", verify, async (req, res) => {
         if (role === 3) {
             res.statusCode(401).json('Usuário não autorizado')
         } else {
-            let sql = `select pessoas.id_pessoa from pessoas WHERE pessoas.id_ent = ${id_ent} and pessoas.cpf_cnpj = '${cpf_cnpj.replace(/[^0-9]/g, '')}'`;
+            let sql = `select pessoas.id_pessoa from pessoas WHERE pessoas.id_ent = ${id_ent} and pessoas.cpf_cnpj = '${cpf_cnpj.replace(/[^0-9]/g, '')}' and pessoas.cpf_cnpj > 1`;
             db.query(sql, (err, result) => {
                 let resSelc = result.length;
                 if (resSelc) {
@@ -468,7 +468,7 @@ app.post("/pessoa", verify, async (req, res) => {
                                                 i++;
                                             }
                                             while (i < ativsecund.length);
-                                        } console.log('socios:', socios.length)
+                                        } 
                                         if (socios.length > 1) {
                                             let i2 = 0;
                                             do {
@@ -548,7 +548,8 @@ app.delete("/delAtivs/:id/:id_pessoa", verify, async (req, res) => {
 app.put("/pessoa/", verify, async (req, res) => {
     let { id_pessoa, id_user, cod_pessoa, tipocad, nome_pessoa, fantasia, cpf_cnpj, email, telefone, fixo, rua, numero, bairro, cidade, uf, cep, data_abertura, data_alt, situacao_cad, porte, vigilancia, regime_trib, obs, obs_encerramento, cod_natureza, ultima_atualizacao, complemento, site, area_mercantil, numero_proc, data_encerramento, usu_cad,
         insc_muni, insc_estad, insc_junta, cod_segmentoativ, classetrib, cod_cnae, cod_cnae_grupo, iss, iss_retido, tx_virgilancia, alvara, alvara_trans } = req.body;
-    //const {data_cad} = Date.now();  
+    //const {data_cad} = Date.now();
+
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!') }
@@ -575,16 +576,16 @@ app.put("/pessoa/", verify, async (req, res) => {
 );
 
 app.post("/pessoasPesq", verify, (req, res) => {
-    let { id_ent, campo, text1, text2, op_tipocad, limit_rows } = req.body; console.log(req.body);
+    let { id_ent, campo, text1, text2, op_tipocad, limit_rows } = req.body;;
     let CONDICAO = '';
     let CONDICAO6 = '';
     if (text1 === '*') { text1 = ''; text2 = '' }
     if (!limit_rows) { limit_rows = 500 }
     switch (campo) {
-        case 'data_cad': CONDICAO = `and pessoas.data_cad between "${text1.replace('/', '-')}" and "${text2.replace('/', '-')}" order by pessoas.cod_pessoa`; break;
-        case 'cod_pessoa': CONDICAO = `and pessoas.cod_pessoa like '%${text1}%' order by pessoas.cod_pessoa`; break;
-        case 'nome_pessoa': CONDICAO = `and pessoas.nome_pessoa like '${text1}%' order by pessoas.cod_pessoa`; break;
-        case 'cpf_cnpj': CONDICAO = `and pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%" order by pessoas.cod_pessoa`; break;
+        case 'data_cad': CONDICAO = `and pessoas.data_cad between "${text1.replace('/', '-')}" and "${text2.replace('/', '-')}"`; break;
+        case 'cod_pessoa': CONDICAO = `and pessoas.cod_pessoa like '%${text1}%'`; break;
+        case 'nome_pessoa': CONDICAO = `and pessoas.nome_pessoa like '${text1}%'`; break;
+        case 'cpf_cnpj': CONDICAO = `and pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%" `; break;
     }
     switch (op_tipocad) {
         case 'C': CONDICAO6 = `and pessoas.tipocad = 'C'`; break;
@@ -593,9 +594,34 @@ app.post("/pessoasPesq", verify, (req, res) => {
     }
     if (CONDICAO) {
         SQL = `select pessoas.id_pessoa,pessoas.tipocad, pessoas.cod_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, pessoas.cep, pessoas.rua,pessoas.numero,pessoas.email,pessoas.telefone,pessoas.fixo,
-    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} ${CONDICAO6} ${CONDICAO} limit ${limit_rows}`;
+    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} ${CONDICAO6} ${CONDICAO} order by pessoas.cod_pessoa desc limit ${limit_rows}`;
         db.query(SQL, (err, result) => {
-            console.log(SQL)
+            if (err) { res.status(404).json('404!'); console.log(err) }
+            else res.send(result);
+        });
+    }
+});
+app.post("/pessoasPesqSep", verify, (req, res) => {
+    let { id_ent, campo, text1, text2, op_tipocad, limit_rows } = req.body;
+    let CONDICAO = '';
+    let CONDICAO6 = '';
+    if (text1 === '*') { text1 = ''; text2 = '' }
+    if (!limit_rows) { limit_rows = 500 }
+    switch (campo) {
+        case 'data_cad': CONDICAO = `and pessoas.data_cad between "${text1.replace('/', '-')}" and "${text2.replace('/', '-')}"`; break;
+        case 'cod_pessoa': CONDICAO = `and pessoas.cod_pessoa like '%${text1}%'`; break;
+        case 'nome_pessoa': CONDICAO = `and pessoas.nome_pessoa like '${text1}%'`; break;
+        case 'cpf_cnpj': CONDICAO = `and pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%" `; break;
+    }
+    switch (op_tipocad) {
+        case 'C': CONDICAO6 = `and pessoas.tipocad = 'C'`; break;
+        case 'E': CONDICAO6 = `and pessoas.tipocad = 'E'`; break;
+        case 'T': CONDICAO6 = `and pessoas.tipocad in ('C','E')`; break;
+    }
+    if (CONDICAO) {
+        SQL = `select pessoas.id_pessoa,pessoas.tipocad, pessoas.cod_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, pessoas.cep, pessoas.rua,pessoas.numero,pessoas.email,pessoas.telefone,pessoas.fixo,
+    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} ${CONDICAO6} ${CONDICAO} and LENGTH(pessoas.cpf_cnpj) < 12 order by pessoas.cod_pessoa desc limit ${limit_rows}`;
+        db.query(SQL, (err, result) => {
             if (err) { res.status(404).json('404!'); console.log(err) }
             else res.send(result);
         });
@@ -757,7 +783,7 @@ app.get("/itbiAllIdImov/:id", verify, async (req, res) => {
     });
 });
 app.post("/itbiPesq/", verify, (req, res) => {
-    let { id_ent, campo, text1, text2, limit_rows } = req.body; console.log(req.body);
+    let { id_ent, campo, text1, text2, limit_rows } = req.body;;
     if (text1 === '*') { text1 = ''; text2 = '' }
     let CONDICAO = '';
     switch (campo) {
@@ -790,7 +816,8 @@ app.get('/itbiLanc/:id_itbi', async (req, res) => {
     lancmtos.nossonum, lancmtos.data_venc, lancmtos.desc_lanc from itbi 
     LEFT JOIN lancmtos on itbi.id_itbi = lancmtos.referencia 
     LEFT JOIN pessoas Pv ON itbi.id_vendedor = Pv.id_pessoa LEFT JOIN pessoas Pc ON itbi.id_comprador = Pc.id_pessoa where itbi.id_itbi = ${id_itbi}`;
-    db.query(SQL, (err, result_itbi) => { console.log(SQL)
+    db.query(SQL, (err, result_itbi) => {
+        console.log(SQL)
         if (err) { res.status(404).json('404!') }
         else {
             res.set(result_itbi);
@@ -819,7 +846,7 @@ app.get('/itbiLanc/:id_itbi', async (req, res) => {
                             let brasao = resbanco[0].brasao;
                             let nome_banco = resbanco[0].nome_banco;
                             let local_pgto = resbanco[0].local_pgto;
-                            let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + new Date().getFullYear() + dtvc + '8' + ("00000000" + idItbi).slice(-9) + '008';
+                            let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + '7000' + dtvc + '8' + ("00000000" + idItbi).slice(-9) + '008';
                             codigobarra = codigobarra.replace(/[^0-9]/g, '');
                             let linhadigitavel = codigobarra.substring(0, 12) + ".7 " + codigobarra.substring(12, 24) + ".5 " + codigobarra.substring(24, 36) + ".6 " + codigobarra.substring(36, 48) + ".8 ";
                             let result_banco = [{
@@ -1206,26 +1233,26 @@ app.post("/logradouro/", verify, async (req, res) => {
         else { res.set(result[0]) }
         role = result[0].role;
         if (role === 1) {
-            let sel = `select logradouros.cep_log FROM logradouros WHERE id_ent = ${id_ent} and logradouros.cep_log = '${cep_log}'`;
+            let sel = `select logradouros.cep_log FROM logradouros WHERE id_ent = ${id_ent} and logradouros.cep_log = '${cep_log}' and logradouros.cep_log > 0`;
             db.query(sel, (err, result3) => {
                 let resSelc = result3.length;
-                if (resSelc > 0) {
-            res.status(401).json('CEP Já cadastrado!')           
-            }else{
-                let SelCodLog = `select max(cod_log) as cod_log FROM logradouros WHERE id_ent = ${id_ent}`;
-                db.query(SelCodLog, (err, result) => {
-                    if (err) { res.status(404).json('404!2') }
-                    else { res.set(result[0]) }
-                    let cod_log = result[0].cod_log + 1;
-                    if (cod_log) {
-                        let SQLL = "insert into logradouros (id_ent, id_user,cod_log, nome_log,cep_log, bairro_log, cidade_log, uf_log,valor_m2, aliq_terreno, aliq_construcao,ft_terreno,ft_construcao, data_cad,obs, usu_cad) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                        db.query(SQLL, [id_ent, id_user, cod_log, nome_log, cep_log, bairro_log, cidade_log, uf_log, valor_m2, aliq_terreno, aliq_construcao, ft_terreno, ft_construcao, data_cad, obs, usu_cad], (err1, result1) => {
-                            if (err1) { res.status(404).json('404!5'), console.log(err1) }
-                            else { res.status(201).json({ cod_log, msg: 'Salvo!' }) }
-                        });
-                    }
-                }); 
-            }
+                if (resSelc > 1) {
+                    res.status(203).json({ msg: 'CEP já cadastrado!' })
+                } else {
+                    let SelCodLog = `select max(cod_log) as cod_log FROM logradouros WHERE id_ent = ${id_ent}`;
+                    db.query(SelCodLog, (err, result) => {
+                        if (err) { res.status(404).json('404!2') }
+                        else { res.set(result[0]) }
+                        let cod_log = result[0].cod_log + 1;
+                        if (cod_log) {
+                            let SQLL = "insert into logradouros (id_ent, id_user,cod_log, nome_log,cep_log, bairro_log, cidade_log, uf_log,valor_m2, aliq_terreno, aliq_construcao,ft_terreno,ft_construcao, data_cad,obs, usu_cad) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                            db.query(SQLL, [id_ent, id_user, cod_log, nome_log, cep_log, bairro_log, cidade_log, uf_log, valor_m2, aliq_terreno, aliq_construcao, ft_terreno, ft_construcao, data_cad, obs, usu_cad], (err1, result1) => {
+                                if (err1) { res.status(404).json('404!5'), console.log(err1) }
+                                else { res.status(201).json({ cod_log, msg: 'Salvo!' }) }
+                            });
+                        }
+                    });
+                }
             });
         } else {
             res.status(401).json('Usuário Não autorizado!');
@@ -1242,19 +1269,20 @@ app.put("/logradouro", verify, async (req, res) => {
         else { res.set(result[0]) }
         role = result[0].role;
         if (role === 1) {
-              let sel = `select logradouros.cep_log FROM logradouros WHERE id_ent = ${id_ent} and logradouros.cep_log = '${cep_log}'`;
+            let sel = `select logradouros.cep_log FROM logradouros WHERE id_ent = ${id_ent} and logradouros.cep_log = '${cep_log}'`;
             db.query(sel, (err, result3) => {
-                let resSelc = result3.length; 
+                let resSelc = result3.length;
                 if (resSelc > 0) {
-            res.status(401).json('CEP Já cadastrado!')           
-            }else{
-            let sql1 = `update logradouros set nome_log = '${nome_log}', bairro_log = '${bairro_log}',cidade_log = '${cidade_log}', valor_m2 = '${valor_m2}', aliq_terreno = '${aliq_terreno}', obs = '${obs}',aliq_construcao = '${aliq_construcao}',
+                    res.status(401).json('CEP Já cadastrado!')
+                } else {
+                    let sql1 = `update logradouros set nome_log = '${nome_log}', bairro_log = '${bairro_log}',cidade_log = '${cidade_log}', valor_m2 = '${valor_m2}', aliq_terreno = '${aliq_terreno}', obs = '${obs}',aliq_construcao = '${aliq_construcao}',
             ft_terreno = '${ft_terreno}',ft_construcao = '${ft_construcao}',cep_log = '${cep_log}', uf_log = '${uf_log}', usu_cad = '${usu_cad}', data_alt = '${data_alt}' where id_log = ${id_log}`;
-            db.query(sql1, (err, result) => {
-                if (err) { res.status(404).json('404'); console.log(err) }
-                else { res.status(200).json("Alterado!") }
+                    db.query(sql1, (err, result) => {
+                        if (err) { res.status(404).json('404'); console.log(err) }
+                        else { res.status(200).json("Alterado!") }
+                    });
+                }
             });
-        } });
         } else {
             res.status(401).json('Usuário Não autorizado!');
         }
@@ -1407,10 +1435,14 @@ app.post("/dividas", verify, async (req, res) => {
                                 res.set(result[0]);
                                 let cod_divida = result[0].cod_divida + 1;
                                 if (cod_divida) {
+                                    function formtInt(v) {
+                                        v = v.toLocaleString().replace(".", "").replace(",", ".");
+                                        return v;
+                                    }
                                     let cod_rec = '3000'; let pago = 'N'; let sobjudice = 'N'; let parcelado = 'N';
                                     let nossonum = exercicio + ("0000" + cod_rec).slice(-4) + ("000000" + cod_divida).slice(-6);
                                     let SQL2 = "insert into dividas (id_ent, cod_divida, exercicio,inscricao,id_imovel, valor_original, valor_juros,valor_multa,valor_corr,desconto, valor_total, sobjudice, parcelado,pago,nossonum,id_user) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                                    db.query(SQL2, [id_ent, cod_divida, exercicio, inscricao, id_imovel, valor_original, valor_juros, valor_multa, valor_corr, desconto, valor_total, sobjudice, parcelado, pago, nossonum, id_user], (err1, result0) => {
+                                    db.query(SQL2, [id_ent, cod_divida, exercicio, inscricao, id_imovel, formtInt(valor_original), formtInt(valor_juros), formtInt(valor_multa), formtInt(valor_corr), formtInt(desconto), formtInt(valor_total), sobjudice, parcelado, pago, nossonum, id_user], (err1) => {
                                         if (err1) { res.status(404).json('Erro ao Salvar!'), console.log(err1) }
                                         else {
                                             res.status(201).json({ id_imovel, msg: 'Incluida com sucesso!' })
@@ -1452,7 +1484,7 @@ app.post("/dividasAuto", verify, async (req, res) => {
                             let SelCod = `select max(cod_divida) as cod_divida FROM dividas WHERE id_ent = ${id_ent}`;
                             db.query(SelCod, (err, result) => {
                                 if (err) { res.status(404).json('404!2'), console.log('errLOG', err) }
-                                else { //res.set(result[0]); 
+                                else { //res.set(result[0]);                                        
                                     let cod_divida = result[0].cod_divida;
                                     do {
                                         exercicio = exercicio - 1;
@@ -1481,7 +1513,7 @@ app.post("/dividasAuto", verify, async (req, res) => {
     });
 });
 app.post('/dividasAll', async (req, res) => {
-       let { id_ent, campo, text1, text2,limit_rows } = req.body; console.log(req.body);
+    let { id_ent, campo, text1, text2, limit_rows } = req.body;;
     let CONDICAO = '';
     if (text1 === '*') { text1 = ''; text2 = '' }
     if (!limit_rows) { limit_rows = 500 }
@@ -1491,58 +1523,60 @@ app.post('/dividasAll', async (req, res) => {
         case 'nome_pessoa': CONDICAO = `and pessoas.nome_pessoa like '${text1}%'`; break;
         case 'cpf_cnpj': CONDICAO = `and pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%"`; break;
     }
-   
+
     if (CONDICAO) {
-    let sql = `select imoveis.id_imovel, imoveis.inscricao,pessoas.nome_pessoa, pessoas.cpf_cnpj,
+        let sql = `select imoveis.id_imovel, imoveis.inscricao,pessoas.nome_pessoa, pessoas.cpf_cnpj,
     (select sum(dividas.valor_original) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as original_total,
     (select sum(dividas.valor_juros) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as juros_total,
     (select sum(dividas.valor_multa) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as multa_total,
     (select sum(dividas.valor_corr) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as corr_total,
     (select sum(dividas.desconto) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as desc_total,
     (select sum(dividas.valor_total) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as valor_total from imoveis 
-    left join pessoas on pessoas.id_pessoa = imoveis.id_pessoa where imoveis.id_ent = ${id_ent} ${CONDICAO}`;
-    db.query(sql, (err, resimoveis) => {
-        if (err) { res.status(404).json('404!2') }
-        else { res.set({ resimoveis }); }
+    left join pessoas on pessoas.id_pessoa = imoveis.id_pessoa where imoveis.id_ent = ${id_ent} ${CONDICAO} 
+    and (select sum(dividas.valor_original) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) > 0`;
+        db.query(sql, (err, resimoveis) => {
+            if (err) { res.status(404).json('404!2') }
+            else { res.set({ resimoveis }); }
 
-        let sql2 = `select dividas.id_divida,dividas.id_imovel, dividas.cod_divida,dividas.inscricao, dividas.exercicio, dividas.valor_original, dividas.valor_juros,dividas.valor_multa,dividas.valor_corr,dividas.desconto, 
+            let sql2 = `select dividas.id_divida,dividas.id_imovel, dividas.cod_divida,dividas.inscricao, dividas.exercicio, dividas.valor_original, dividas.valor_juros,dividas.valor_multa,dividas.valor_corr,dividas.desconto, 
     dividas.valor_total, dividas.sobjudice, dividas.parcelado,dividas.pago,dividas.nossonum, dividas.data_cad, pessoas.nome_pessoa, pessoas.cpf_cnpj from dividas 
     left join imoveis on imoveis.id_imovel = dividas.id_imovel
     left join pessoas on pessoas.id_pessoa = imoveis.id_pessoa where dividas.id_imovel in (
     select imoveis.id_imovel from imoveis left join pessoas on pessoas.id_pessoa = imoveis.id_pessoa where imoveis.id_ent = ${id_ent} ${CONDICAO}) and dividas.pago = 'N'`;
-        db.query(sql2, (err, resdivida) => {
-            if (err) { res.status(404).json('404!3') }
-            else { res.set({ resdivida }); }
+            db.query(sql2, (err, resdivida) => {
+                if (err) { res.status(404).json('404!3') }
+                else { res.set({ resdivida }); }
 
-            const sortKey = "id_imovel";
-            resimoveis.sort((a, b) => {
-                if (a[sortKey] < b[sortKey]) {
-                    return -1;
-                }
-                if (a[sortKey] > b[sortKey]) {
-                    return 1;
-                }
-                return 0;
-            })
-            let lanc_Map = resimoveis.reduce((map, row) => {
-                key = row["id_imovel"];
-                map[key] = row;
-                return map;
-            }, {})
+                const sortKey = "id_imovel";
+                resimoveis.sort((a, b) => {
+                    if (a[sortKey] < b[sortKey]) {
+                        return -1;
+                    }
+                    if (a[sortKey] > b[sortKey]) {
+                        return 1;
+                    }
+                    return 0;
+                })
+                let lanc_Map = resimoveis.reduce((map, row) => {
+                    key = row["id_imovel"];
+                    map[key] = row;
+                    return map;
+                }, {})
 
-            let resultMap = resdivida.reduce((map, row) => {
-                let key = row["id_imovel"];
-                if (map[key]) {
-                    if (!map[key].dividas) map[key].dividas = [];
-                    map[key].dividas.push(row);
-                }
-                return map;
-            }, lanc_Map)
+                let resultMap = resdivida.reduce((map, row) => {
+                    let key = row["id_imovel"];
+                    if (map[key]) {
+                        if (!map[key].dividas) map[key].dividas = [];
+                        map[key].dividas.push(row);
+                    }
+                    return map;
+                }, lanc_Map)
 
-            let result = Object.values(resultMap);
-            res.status(200).json({ result }); console.log(result)
+                let result = Object.values(resultMap);
+                res.status(200).json({ result });
+            });
         });
-    });}
+    }
 });
 //sem uso
 app.get("/dividas/:id_imovel", verify, (req, res) => {
@@ -1556,7 +1590,7 @@ app.get("/dividas/:id_imovel", verify, (req, res) => {
 
 //individual sem soma
 app.post("/dividasPesq", verify, (req, res) => {
-    let { id_ent, campo, text1, text2,limit_rows } = req.body; console.log(req.body);
+    let { id_ent, campo, text1, text2, limit_rows } = req.body;;
     let CONDICAO = '';
     if (text1 === '*') { text1 = ''; text2 = '' }
     if (!limit_rows) { limit_rows = 500 }
@@ -1566,7 +1600,7 @@ app.post("/dividasPesq", verify, (req, res) => {
         case 'nome_pessoa': CONDICAO = `and pessoas.nome_pessoa like '${text1}%' order by dividas.inscricao`; break;
         case 'cpf_cnpj': CONDICAO = `and pessoas.cpf_cnpj like "${text1.replace(/[^0-9]/g, '')}%" order by dividas.inscricao`; break;
     }
-   
+
     if (CONDICAO) {
         SQL = `select dividas.id_divida, dividas.cod_divida,dividas.inscricao, dividas.exercicio, dividas.valor_original, dividas.valor_juros,dividas.valor_multa,dividas.valor_corr,dividas.desconto, 
     dividas.valor_total, dividas.sobjudice, dividas.parcelado,dividas.pago,dividas.nossonum, dividas.data_cad, pessoas.nome_pessoa, pessoas.cpf_cnpj from dividas 
@@ -1993,6 +2027,7 @@ app.get('/lancmtoId/:id_lanc', async (req, res) => {
                     let vlt = rowDataPkt.valor_real;
                     let conv = rowDataPktb.convenio;
                     let dtvc = rowDataPkt.data_venc;
+                    let cod_rec = rowDataPkt.cod_rec;
                     let idlc = rowDataPkt.id_lanc;
                     let cod_banco = resbanco[0].cod_banco;
                     let agencia = resbanco[0].agencia;
@@ -2001,7 +2036,8 @@ app.get('/lancmtoId/:id_lanc', async (req, res) => {
                     let brasao = resbanco[0].brasao;
                     let nome_banco = resbanco[0].nome_banco;
                     let local_pgto = resbanco[0].local_pgto;
-                    let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + new Date().getFullYear() + dtvc + '8' + ("00000000" + idlc).slice(-9) + '008';
+                    //let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + new Date().getFullYear() + dtvc + '8' + ("00000000" + idlc).slice(-9) + '008';
+                    let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + cod_rec + dtvc + '8' + ("00000000" + idlc).slice(-9) + '008';
                     codigobarra = codigobarra.replace(/[^0-9]/g, '');
                     let linhadigitavel = codigobarra.substring(0, 12) + ".7 " + codigobarra.substring(12, 24) + ".5 " + codigobarra.substring(24, 36) + ".6 " + codigobarra.substring(36, 48) + ".8 ";
                     let result_banco = [{
@@ -2165,7 +2201,7 @@ app.post('/lancmtos_dams', async (req, res) => {
     }
     // case '1': CONDICAO3 = `lancmtos.${op_data} = '${text1.replace('/','-')}'`; break;
     switch (op_periodo) {
-        case '2': CONDICAO3 = `lancmtos.data_cad between "${text1.replace('/', '-')}" and "${text2.replace('/', '-')}"`; break;
+        case '2': CONDICAO3 = `lancmtos.data_cad between '${text1.replace('/', '-')}' and '${text2.replace('/', '-')}'`; break;
         case '3': CONDICAO3 = `lancmtos.exercicio = '${text1}'`; break;
     }
     switch (op_receb) {
@@ -2619,7 +2655,44 @@ app.get("/consultaBaixa/:nossonum/:id_ent", verify, async (req, res) => {
 }
 );
 
-app.put("/BaixaManual", verify, async (req, res) => {
+app.put("/baixaBanco", verify, async (req, res) => {
+    const { id_user, data_pgmto, data_cred, valor_rec, valor_taxa, cod_rec, cod_banco, id_ent, id_lanc } = req.body;
+    function formtInt(v) {
+        v = v.toLocaleString().replace(".", "").replace(",", ".");
+        return v;
+    }
+    let Sql = `select role from usuarios where id_user = ${id_user}`;
+    db.query(Sql, (err, result) => {
+        if (err) { res.status(404).json('404!'), console.log(err) }
+        else { res.set(result[0]) }
+        role = result[0].role;
+        if (role === 1) {
+            let valor_real = formtInt(valor_rec) - formtInt(valor_taxa);
+            let sql1 = `update lancmtos set lancmtos.data_pgmto = '${data_pgmto}', lancmtos.data_cred = '${data_cred}', 
+                lancmtos.valor_rec = ${formtInt(valor_rec)},lancmtos.valor_taxa = ${formtInt(valor_taxa)},lancmtos.valor_real = ${valor_real},
+                lancmtos.tipo_baixa = '${cod_banco}', lancmtos.pago = 'S' where lancmtos.id_lanc = '${id_lanc}' and lancmtos.cod_rec = '${cod_rec}' and lancmtos.id_ent = '${id_ent}'`;
+            db.query(sql1, (err) => {
+                console.log(sql1)
+                if (err) { res.status(404).json('404!'); console.log(err) } else {
+                    let sql2 = `update lancmtos_detalhado set lancmtos_detalhado.valor_rec = ${formtInt(valor_rec)},lancmtos_detalhado.valor_taxa = ${formtInt(valor_taxa)},
+                        lancmtos_detalhado.valor_real = ${formtInt(valor_real)}, lancmtos_detalhado.data_pgmto = '${data_pgmto}', 
+                        lancmtos_detalhado.data_cred = '${data_cred}', lancmtos_detalhado.tipo_baixa = '${cod_banco}', lancmtos_detalhado.pago = 'S' 
+                        where lancmtos_detalhado.cod_lancdet = '${id_lanc}' and lancmtos_detalhado.cod_rec = '${cod_rec}' and lancmtos_detalhado.id_ent = '${id_ent}'`;
+                    db.query(sql2, (err) => {
+                        console.log(sql2)
+                        if (err) {
+                            res.status(404).json('404!'); console.log(err)
+                        } else res.status(200).json({ id_lanc, data_pgmto, cod_rec, valor_rec });
+                    });
+                }
+            });
+        } else {
+            res.status(401).json('Usuário Não autorizado!');
+        }
+    });
+}
+);
+app.put("/baixaManual", verify, async (req, res) => {
     const { id_user, nossonum, data_pgmto, pago, valor_real, id_ent } = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
@@ -2674,7 +2747,7 @@ app.put("/estornoBaixa", verify, async (req, res) => {
 );
 
 app.delete("/delLanc/:id_user/:id_lanc/:id_pessoa", verify, (req, res) => {
-    let { id_user, id_lanc, id_pessoa } = req.params; console.log('idLanc:', id_lanc)
+    let { id_user, id_lanc, id_pessoa } = req.params;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!') }
@@ -2837,7 +2910,7 @@ app.get('/iptuId/:id_imovel', async (req, res) => {
     const { id_imovel } = req.params;
     let SQL = `select pessoas.id_pessoa,pessoas.nome_pessoa, pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.cep, 
     imoveis.id_ent,imoveis.id_imovel,imoveis.cod_imovel,imoveis.inscricao,imoveis.area_terreno,imoveis.area_construida,
-    imoveis.valor_venal,imoveis.valor_iptu,imoveis.valor_antec,imoveis.valor_total, imoveis.uso_solo,
+    imoveis.valor_venal,imoveis.valor_iptu,imoveis.valor_antec,imoveis.valor_total, imoveis.uso_solo,imoveis.lote,imoveis.quadra,
     imoveis.tx1,imoveis.tx2,imoveis.tx3, imoveis.situacao, imoveis.data_cad,imoveis.data_venc,imoveis.nossonum, imoveis.exercicio,imoveis.pago,
     (select sum(dividas.valor_total) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as divida_total,
     tipo_imovel.desc_tipo_imovel, padrao.desc_padrao from imoveis 
@@ -2882,7 +2955,7 @@ app.get('/iptuId/:id_imovel', async (req, res) => {
                                     let brasao = resbanco[0].brasao;
                                     let nome_banco = resbanco[0].nome_banco;
                                     let local_pgto = resbanco[0].local_pgto;
-                                    let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + new Date().getFullYear() + dtvc + '8' + ("00000000" + idImvel).slice(-9) + '008';
+                                    let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + '1000' + dtvc + '8' + ("00000000" + idImvel).slice(-9) + '008';
                                     codigobarra = codigobarra.replace(/[^0-9]/g, '');
                                     let linhadigitavel = codigobarra.substring(0, 12) + ".7 " + codigobarra.substring(12, 24) + ".5 " + codigobarra.substring(24, 36) + ".6 " + codigobarra.substring(36, 48) + ".8 ";
                                     let result_banco = [{
@@ -2982,7 +3055,8 @@ app.get('/dividasId/:id_imovel', async (req, res) => {
                                         let brasao = resbanco[0].brasao;
                                         let nome_banco = resbanco[0].nome_banco;
                                         let local_pgto = resbanco[0].local_pgto;
-                                        let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + new Date().getFullYear() + dtvc + '8' + ("00000000" + idImvel).slice(-9) + '008';
+                                        //let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + new Date().getFullYear() + dtvc + '8' + ("00000000" + idImvel).slice(-9) + '008';
+                                        let codigobarra = '8162' + ("00000000000" + vlt).slice(-12) + conv + '3000' + dtvc + '8' + ("00000000" + idImvel).slice(-9) + '008';
                                         codigobarra = codigobarra.replace(/[^0-9]/g, '');
                                         let linhadigitavel = codigobarra.substring(0, 12) + ".7 " + codigobarra.substring(12, 24) + ".5 " + codigobarra.substring(24, 36) + ".6 " + codigobarra.substring(36, 48) + ".8 ";
                                         let result_banco = [{
@@ -3181,7 +3255,7 @@ app.post("/cemiPost", verify, async (req, res) => {
 });
 
 app.put("/cemiPut", verify, async (req, res) => {
-    const { id_user, id_cemi, nome_cemi, email, telefone, cidade, endereco, cnpj, data_alt, usu_cad, tx1, tx2, tx3, vl } = req.body; console.log(req.body);
+    const { id_user, id_cemi, nome_cemi, email, telefone, cidade, endereco, cnpj, data_alt, usu_cad, tx1, tx2, tx3, vl } = req.body;;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.status(404).json('404!'), console.log(err) }
@@ -3280,7 +3354,7 @@ app.delete("/operador/:id_oper/:usu_cad", verify, (req, res) => {
 //===========imoveis========//
 app.post("/imoveisPesq", (req, res) => {
     let { id_ent, campo, text1, text2, limit_rows } = req.body;
-    if (!limit_rows){limit_rows = 200};
+    if (!limit_rows) { limit_rows = 200 };
     let CONDICAO = '';
     if (text1 === '') { CONDICAO = `imoveis.inscricao like '${text1}%' order by imoveis.cod_imovel desc` } else {
         switch (campo) {
@@ -3297,7 +3371,7 @@ app.post("/imoveisPesq", (req, res) => {
         (select sum(dividas.valor_total) from dividas where dividas.pago = 'N' and dividas.id_imovel = imoveis.id_imovel ) as divida_total FROM imoveis 
         LEFT JOIN logradouros ON logradouros.id_log = imoveis.id_log LEFT JOIN loteamentos ON loteamentos.id_lote = imoveis.id_lote LEFT JOIN pessoas ON pessoas.id_pessoa = imoveis.id_pessoa 
         where imoveis.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`;
-        db.query(sql, (err, result) => { console.log(sql)
+        db.query(sql, (err, result) => {
             if (err) { res.status(404).json('404!'); console.log(err) }
             else res.send(result);
         });
@@ -3483,8 +3557,11 @@ app.post("/imoveis", verify, async (req, res) => {
                     let SelCod = `select max(cod_imovel) as cod_imovel from imoveis WHERE id_ent = ${id_ent}`;
                     db.query(SelCod, (err, result2) => {
                         if (err) { res.status(404).json('404!'), console.log(err) }
-                        else { res.set(result2[0]); }
-
+                        else { res.set(result2[0]) }
+                        function formtInt(v) {
+                            v = v.toLocaleString().replace(".", "").replace(",", ".");
+                            return v;
+                        }
                         let cod_imovel = result2[0].cod_imovel + 1;
                         if (cod_imovel) {
                             if (!inscricao) { inscricao = cod_imovel } //<--em caso de parametros estiver com insc_sqc = 'S'
@@ -3498,9 +3575,9 @@ app.post("/imoveis", verify, async (req, res) => {
                             db.query(SQL, [id_ent, cod_imovel, id_pessoa, id_pessoa_resp, id_user, cod_pessoa, inscricao.replaceAll(".", ""), inscricao_ant.replaceAll(".", ""), id_log, id_lote, cod_lote, situacao, cod_log, num_imovel,
                                 lote, quadra, tipo_imovel, tipo_localizacao, situacao_imovel, isencao, patrimonio_terr, patrimonio_constru, uso_solo, coleta, coletor, elevacao, coberta, conservacao,
                                 padrao, pedologia, especie, construcao_piso, topografia, serv_agua, serv_ilumin, serv_pavimen, serv_energ, serv_esgoto, serv_galeria, limit_alagado,
-                                limit_scalc, limit_smuro, sanitaria, alinhamento, limit_encrav, limit_acident, posicao, complemento, face, area_terreno, area_construida, tx1,
-                                tx2, tx3, profund, num_frente, num_unid, num_pav, testada_r, testada_f, lateral_esq, lateral_dir, m_fundos, valor_m2,
-                                valor_vlog, valor_unitario, valor_venal, venal_inf, aliquota, valor_iptu, desconto, valor_total, obs, exercicio, pago, nossonum, data_cad, data_alt, usu_cad],
+                                limit_scalc, limit_smuro, sanitaria, alinhamento, limit_encrav, limit_acident, posicao, complemento, face, formtInt(area_terrenoformtInt), formtInt(area_construida), tx1,
+                                tx2, tx3, formtInt(profund), num_frente, num_unid, num_pav, formtInt(testada_r), formtInt(testada_f), formtInt(lateral_esq), formtInt(lateral_dir), formtInt(m_fundos), formtInt(valor_m2),
+                                formtInt(valor_vlog), formtInt(valor_unitario), formtInt(valor_venal), (venal_inf), formtInt(aliquota), formtInt(valor_iptu), formtInt(desconto), formtInt(valor_total), obs, exercicio, pago, nossonum, data_cad, data_alt, usu_cad],
                                 (err, result2) => {
                                     msg = "Salvo!";
                                     if (err) { res.status(404).json('Campos Obrigatorios'), console.log(err) }
@@ -3670,8 +3747,8 @@ app.put("/baixarIPTU/:id_user/:id_imovel/:opcao/:data_pgmto", verify, (req, res)
     });
 });
 app.post("/alvImovPost", verify, async (req, res) => {
-    let { id_ent, id_imovel, id_pessoa, id_user, data_emissao, data_cad, num_processo, tipo_alvara, data_validade,data_inicio,data_terminio, exercicio,obs_alvara,
-        tipo_imovl,area_inter,area_terreno,area_construida, emissao, id_assin1, id_assin2, id_assin3 } = req.body;
+    let { id_ent, id_imovel, id_pessoa, id_user, data_emissao, data_cad, num_processo, tipo_alvara, data_validade, data_inicio, data_terminio, exercicio, obs_alvara,
+        tipo_imovl, area_inter, area_terreno, area_construida, emissao, id_assin1, id_assin2, id_assin3 } = req.body;
 
     let SelCod = `select max(cod_alvara) as cod_alvara FROM imoveis_alvaras WHERE id_ent = ${id_ent}`;
     db.query(SelCod, (err, result) => {
@@ -3681,11 +3758,11 @@ app.post("/alvImovPost", verify, async (req, res) => {
         let cod_alvara = result[0].cod_alvara + 1;
         if (cod_alvara) {
             if (!num_processo) { num_processo = ("00000" + cod_alvara).slice(-5) + '/' + new Date().getFullYear() };
-            if(!exercicio){exercicio = new Date().getFullYear()};
+            if (!exercicio) { exercicio = new Date().getFullYear() };
             let sql2 = `insert into imoveis_alvaras (id_ent,cod_alvara,id_imovel,id_pessoa,id_user,data_emissao,data_cad,num_processo,tipo_alvara,data_validade,data_inicio,data_terminio,exercicio,obs_alvara,
                         tipo_imovl,area_inter,area_terreno,area_construida,emissao,id_assin1,id_assin2,id_assin3) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-            db.query(sql2, [id_ent, cod_alvara, id_imovel, id_pessoa, id_user, data_emissao.split('/').reverse().join('-'), data_cad, num_processo, tipo_alvara, data_validade,data_inicio,data_terminio, exercicio,obs_alvara,
-                tipo_imovl,area_inter,area_terreno,area_construida, emissao, id_assin1, id_assin2, id_assin3], (err1, result) => {
+            db.query(sql2, [id_ent, cod_alvara, id_imovel, id_pessoa, id_user, data_emissao.split('/').reverse().join('-'), data_cad, num_processo, tipo_alvara, data_validade, data_inicio, data_terminio, exercicio, obs_alvara,
+                tipo_imovl, area_inter, area_terreno, area_construida, emissao, id_assin1, id_assin2, id_assin3], (err1, result) => {
                     if (err1) { res.status(404).json('404!'), console.log(err1) }
                     else {
                         let slq2 = `select id_alvara,id_imovel,cod_alvara,exercicio,data_cad,num_processo,tipo_alvara,data_validade,emissao from imoveis_alvaras where id_imovel = ${id_imovel} order by id_alvara desc`;
@@ -3765,7 +3842,7 @@ app.put("/cancAlvImov/:id_alvara/:id_imovel/:emissao/:usu_cad", verify, async (r
     });
 }
 );
-//===========Tumulos========//
+//===========tumulos========//
 app.post("/tumulosPesq", verify, (req, res) => {
     let { id_ent, campo, text1, text2, limit_rows } = req.body;;
     let CONDICAO = '';
@@ -3774,6 +3851,7 @@ app.post("/tumulosPesq", verify, (req, res) => {
     switch (campo) {
         case 'data_cad': CONDICAO = `tumulos.data_cad between "${text1.replace('/', '-')}" and "${text2.replace('/', '-')}" order by tumulos.cod_tum desc`; break;
         case 'cod_tum': CONDICAO = `tumulos.cod_tum like '${text1}%'`; break;
+        case 'inscricao': CONDICAO = `tumulos.inscricao like '${text1}%'`; break;
         case 'nome_pessoa': CONDICAO = `pessoas.nome_pessoa like '${text1}%' order by tumulos.cod_tum desc`; break;
         case 'cpf_cnpj': CONDICAO = `pessoas.cpf_cnpj like '${text1}%' order by tumulos.cod_tum desc`; break;
     }
@@ -3781,11 +3859,11 @@ app.post("/tumulosPesq", verify, (req, res) => {
         SQL = `select tumulos.id_tum,tumulos.cod_tum,tumulos.inscricao,tumulos.id_cemi, tumulos.id_pessoa, tumulos.conserv, tumulos.data_alt, tumulos.data_cad, tumulos.descricao, 
         tumulos.dst, tumulos.st, tumulos.qd, tumulos.lt, tumulos.obs,tumulos.padrao,tumulos.tipo,tumulos.usu_cad,tumulos.area_terreno,tumulos.area_construida,
         tumulos.testada,tumulos.profundidade,tumulos.vl_total,tumulos.situacao,pessoas.id_pessoa, 
-        pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.fixo,pessoas.email,cemiterios.id_cemi,cemiterios.nome_cemi FROM tumulos 
-        LEFT JOIN cemiterios ON cemiterios.id_cemi = tumulos.id_cemi 
-        LEFT JOIN pessoas ON pessoas.id_pessoa = tumulos.id_pessoa where tumulos.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows} `;
-        db.query(SQL, (err, result) => {
-            ;
+        pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.fixo,pessoas.email,
+        cemiterios.id_cemi,cemiterios.nome_cemi, lancmtos.pago FROM tumulos 
+        LEFT JOIN cemiterios ON cemiterios.id_cemi = tumulos.id_cemi LEFT JOIN pessoas ON pessoas.id_pessoa = tumulos.id_pessoa 
+        LEFT JOIN lancmtos on lancmtos.referencia = tumulos.id_tum where tumulos.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows} `;
+        db.query(SQL, (err, result) => {console.log(SQL)
             if (err) { res.status(404).json('404!') }
             else res.send(result);
         });
@@ -3828,6 +3906,7 @@ app.post("/postTum", verify, async (req, res) => {
     let { id_ent, id_cemi, id_user, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, descricao, obs, usu_cad, data_cad,
         data_alt, area_terreno, area_construida, testada, profundidade, tx1, tx2, tx3, vl, desconto, situacao } = req.body;
     //const {data_cad} = Date.now();
+    let inscricao = `${st + qd + lt}`;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
         if (err) { res.json('404!') }
@@ -3836,27 +3915,92 @@ app.post("/postTum", verify, async (req, res) => {
         if (role === 3) {
             res.status(401).json('Usuário não autorizado')
         } else {
-            let SelCod = `select max(cod_tum) as cod_tum from tumulos WHERE id_ent = ${id_ent}`;
-            db.query(SelCod, (err, result) => {
-                if (err) { res.status(404).json('404!') }
-                else { res.set(result[0]); }
-                let vl_total = parseFloat(vl) + parseFloat(tx1) + parseFloat(tx2) + parseFloat(tx3);
-
-                let cod_tum = result[0].cod_tum + 1;
-                if (cod_tum) {
-                    let inscricao = `${st + qd + lt}`;
-                    let SQL = `insert into tumulos (id_ent, cod_tum,inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, descricao, obs,usu_cad,data_cad,data_alt,area_terreno,area_construida,
-                    testada, profundidade, vl_total,tx1, tx2, tx3, vl, desconto,situacao) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-                    db.query(SQL, [id_ent, cod_tum, inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, descricao, obs, usu_cad, data_cad, data_alt, area_terreno, area_construida,
-                        testada, profundidade, vl_total, tx1, tx2, tx3, vl, desconto, situacao], (err, result1) => {
-                            if (err) { console.log(err) }
-                            else { res.json({ result1, msg: 'Salvo' }) }
-                        });
+            
+              let sql = `select tumulos.inscricao from tumulos WHERE tumulos.id_ent = '${id_ent}' and tumulos.inscricao = '${inscricao}' and tumulos.inscricao > 1`;
+            db.query(sql, (err, result) => {
+                let resSelc = result.length;
+                if (resSelc){
+                    res.status(203).json({ msg: 'Inscrição já cadastrada!' })
                 } else {
-                    console.log('Erro ao Gerar Codigo! linha:420')
+            let cod_rec = '4021';
+            let sql0 = `select receitas.valor,receitas.id_rec from receitas where receitas.cod_rec = ${cod_rec} and id_ent = ${id_ent}`;
+            db.query(sql0, (err, receita) => {
+                if (err) { res.status(404).json('404: Receita 4021!'), console.log('err rec', err) }
+                else { //res.set(receita[0])
+                    let SelCod = `select max(cod_tum) as cod_tum from tumulos WHERE id_ent = ${id_ent}`;
+                    db.query(SelCod, (err, result) => {
+                        if (err) { res.status(404).json('404!') }
+                        else { res.set(result[0]); }
+
+                        let cod_tum = result[0].cod_tum + 1;
+                        if (cod_tum) {
+                             if(!vl){vl = 0};                            
+                            if (vl <= 0) {
+                                vl = receita[0].valor;                           
+                            } 
+                        let vl_total = parseFloat(vl) + parseFloat(tx1) + parseFloat(tx2) + parseFloat(tx3);                           
+                            let SQL = `insert into tumulos (id_ent, cod_tum,inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, descricao, obs,usu_cad,data_cad,data_alt,area_terreno,area_construida,
+                    testada, profundidade, vl_total,tx1, tx2, tx3, vl, desconto,situacao) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+                            db.query(SQL, [id_ent, cod_tum, inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, descricao, obs, usu_cad, data_cad, data_alt, area_terreno, area_construida,
+                                testada, profundidade, vl_total, tx1, tx2, tx3, vl, desconto, situacao], (err, result1) => {
+                                    if (err) { console.log(err) }
+                                    else {
+                                        let id_tum = result1.insertId;
+                                        if (id_tum) {
+                                            let sql1 = `select entidades.dias_venc from entidades where entidades.id_ent = ${id_ent}`;
+                                            db.query(sql1, (err, entidad) => {
+
+                                                let SelCod = `select max(cod_lanc) as cod_lanc FROM lancmtos WHERE id_ent = ${id_ent}`;
+                                                db.query(SelCod, (err, result) => {
+                                                    if (err) { res.status(404).json('404!'), console.log('errLOG', err) }
+                                                    else {
+                                                        res.set(result[0])
+
+                                                        let dataAtual = new Date();
+                                                        dataAtual.setDate(dataAtual.getDate() + entidad[0].dias_venc);
+                                                        let data_venc = dataAtual.toLocaleDateString('pt-BR');
+                                                        let data_lanc = data_cad;
+                                                        let cod_lanc = result[0].cod_lanc + 1;
+                                                        let valor_real = vl_total;
+                                                        let valor_original = vl_total;
+                                                        let id_rec = receita[0].id_rec;
+                                                        let parc = '0'; let situacao = 'E'; let pago = 'N'; let cod_insc = cod_tum; let numero_proc = ("00000" + cod_tum).slice(-5) + '/' + new Date().getFullYear();
+                                                        let referencia = id_tum; let exercicio = new Date().getFullYear();
+                                                        let nossonum = exercicio + ("0000" + cod_rec).slice(-4) + ("000000" + cod_tum).slice(-6);
+                                                        let desc_lanc = `VALOR REFERÊNTE A TAXA DE MANUTENÇÃO TUMULO: ${("000000" + cod_tum).slice(-6)} INSCRIÇÂO: ${inscricao}.`;
+                                                        let sql2 = "insert into lancmtos (id_ent,cod_lanc,id_pessoa, id_user,cod_rec,id_rec,desc_lanc, valor_real,valor_original,parc,situacao,nossonum,pago,exercicio,cod_insc,numero_proc,data_lanc,data_venc, referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                        db.query(sql2, [id_ent, cod_lanc, id_pessoa, id_user, cod_rec, id_rec, desc_lanc, valor_real, valor_original, parc, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, data_lanc, data_venc, referencia], (err1, result3) => {
+                                                            if (err1) { res.status(404).json('404!'), console.log(err1) }
+                                                            else {
+                                                                //res.set(result3[0]) 
+                                                                let id_lanc = result3.insertId;
+                                                                if (id_lanc) {
+                                                                    let cod_lancdet = id_lanc;
+                                                                    let sql3 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,cod_rec,id_rec,valor_real, situacao,nossonum,pago,exercicio,cod_insc,numero_proc,referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                                    db.query(sql3, [id_ent, cod_lancdet, id_pessoa, id_user, cod_rec, id_rec, valor_real, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, referencia], (err1, result4) => {
+                                                                        if (err1) {
+                                                                            res.status(404).json('erro ao Gerar lancmto'); console.log(err1);
+                                                                        } else { console.log(sql3)
+                                                                            res.status(200).json({ id_tum, msg: 'Salvo' })
+                                                                        }
+                                                                    });
+                                                                } else { res.status(404).json('erro ao Gerar lancmto'); console.log('erro ao Gerar lancmto'); }
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            });//fim select dias vencimento
+                                        }
+                                    }
+                                });
+                        } else {
+                            console.log('Erro ao Gerar Codigo!')
+                        }
+                    });
                 }
             });
         }
+            }); }
     });
 });
 
@@ -3885,8 +4029,18 @@ app.put("/putTum/", verify, async (req, res) => {
     });
 }
 );
+app.get('/tumLanc/:id_tum', async (req, res) => {
+    const { id_tum } = req.params;
+    let SQL = `select tumulos.id_tum,lancmtos.id_lanc from tumulos LEFT JOIN lancmtos on tumulos.id_tum = lancmtos.referencia where tumulos.id_tum = ${id_tum}`;
+    db.query(SQL, (err, result) => {
+        console.log(SQL)
+        if (err) { res.status(404).json('404!') }
+        else { res.json(result[0].id_lanc)}
+    });
+});
+
 app.post("/alvarasPesq", verify, (req, res) => {
-    let { id_ent, campo, text1, text2, limit_rows } = req.body; console.log(req.body);
+    let { id_ent, campo, text1, text2, limit_rows } = req.body;;
     let CONDICAO = '';
     if (text1 === '*') { text1 = ''; text2 = '' }
     if (!limit_rows) { limit_rows = 500 }
@@ -3908,7 +4062,7 @@ app.post("/alvaratum", verify, async (req, res) => {
 
     let SelCod = `select max(cod_alvara) as cod_alvara FROM tumulos_alvaras WHERE id_ent = ${id_ent}`;
     db.query(SelCod, (err, result) => {
-        if (err) { res.status(404).json('404!2')}
+        if (err) { res.status(404).json('404!2') }
         else { res.set(result[0]) }
 
         let cod_alvara = result[0].cod_alvara + 1;
@@ -3997,7 +4151,7 @@ app.post("/tosPost", verify, async (req, res) => {
 );
 app.get("/tosGet/:id_tos", verify, async (req, res) => {
     const { id_tos } = req.params;
-    let sql3 = `select id_ent,cod_tos,id_pessoa,id_user,id_tum,emissao,data_emissao,data_cad,data_validade,descricao,obs_tos, id_assin1 from tumulos_ossario where id_tos = ${id_tos}`;
+    let sql3 = `select id_ent,cod_tos,id_pessoa,id_user,id_tum,emissao,data_emissao,data_cad,data_validade,validade,descricao,obs_tos, id_assin1 from tumulos_ossario where id_tos = ${id_tos}`;
     db.query(sql3, (err, result) => {
         if (err) { res.status(404).json('404!') }
         else {
@@ -4085,7 +4239,7 @@ app.post("/sepPost", verify, async (req, res) => {
             res.status(401).json('Usuário não autorizado')
         } else {
             let cod_rec = '4018';
-            let sql0 = `select receitas.valor,receitas.id_rec from receitas where receitas.cod_rec = ${cod_rec}`;
+            let sql0 = `select receitas.valor,receitas.id_rec from receitas where receitas.cod_rec = ${cod_rec} and id_ent = ${id_ent}`;
             db.query(sql0, (err, receita) => {
                 if (err) { res.status(404).json('404: Receita 4018!'), console.log('err valor rec', err) }
                 else { //res.set(receita[0])                                       
@@ -4121,7 +4275,7 @@ app.post("/sepPost", verify, async (req, res) => {
                                                     let data_lanc = data_cad;
                                                     let cod_lanc = result[0].cod_lanc + 1;
                                                     let valor_real = receita[0].valor; let id_rec = receita[0].id_rec; let valor_original = receita[0].valor;
-                                                    let parc = '0'; let situacao = 'E'; let pago = 'N'; let cod_insc = cod_sep; let numero_proc = ("00000" + cod_sep).slice(-5) +'/' + new Date().getFullYear();
+                                                    let parc = '0'; let situacao = 'E'; let pago = 'N'; let cod_insc = cod_sep; let numero_proc = ("00000" + cod_sep).slice(-5) + '/' + new Date().getFullYear();
                                                     let referencia = id_sep; let exercicio = new Date().getFullYear();
                                                     let nossonum = exercicio + ("0000" + cod_rec).slice(-4) + ("000000" + cod_sep).slice(-6);
                                                     let desc_lanc = `VALOR REFERÊNTE TAXA DE SEPULTAMENTO: ${("000000" + cod_sep).slice(-6)}.`;
@@ -4203,12 +4357,13 @@ app.post("/sepmtoPesq", verify, (req, res) => {
     if (CONDICAO) {
         SQL = `select tumulos.dst,tumulos.inscricao, tumulos.st, tumulos.qd, tumulos.lt,tumulos.tipo, pessoas.id_pessoa, pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,
                 pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.email,sepmtos.id_sep,sepmtos.cod_tum,sepmtos.cod_sep,sepmtos.septdo,sepmtos.cpf_cnpj_septdo,
-                sepmtos.familia,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.situacao_pgmto,sepmtos.data_cad, sepmtos.vl_total,cemiterios.id_cemi,cemiterios.nome_cemi 
+                sepmtos.familia,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.data_cad, sepmtos.vl_total,cemiterios.id_cemi,cemiterios.nome_cemi,lancmtos.pago
                 FROM sepmtos 
                 LEFT JOIN tumulos on tumulos.id_tum = sepmtos.id_tum 
                 LEFT JOIN cemiterios on cemiterios.id_cemi = sepmtos.id_cemi 
                 LEFT JOIN pessoas on pessoas.id_pessoa = sepmtos.id_pessoa 
-                where sepmtos.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows}`; console.log(SQL)
+                LEFT JOIN lancmtos on lancmtos.referencia = sepmtos.id_sep 
+                where sepmtos.id_ent = ${id_ent} and ${CONDICAO} order by sepmtos.id_sep desc limit ${limit_rows}`; console.log(SQL)
         db.query(SQL, (err, result) => {
             ;
             if (err) { res.status(404).json('Sem dados!') }
@@ -4771,7 +4926,7 @@ app.put("/usuario", verify, async (req, res) => {
         })
     });
     uploadUser1.single('arquivo')(req, res, function (err) {
-        let { id_user, username, password, nome, role, prv, email, telefone, data_alt, ativo, imgperf } = req.body; console.log(req.body)
+        let { id_user, username, password, nome, role, prv, email, telefone, data_alt, ativo, imgperf } = req.body;
         if (req.file) {
             imgperf = req.file.filename;
             //  imgperf = id_ent + '_' + id_user + '.jpg';
