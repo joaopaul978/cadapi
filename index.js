@@ -468,7 +468,7 @@ app.post("/pessoa", verify, async (req, res) => {
                                                 i++;
                                             }
                                             while (i < ativsecund.length);
-                                        } 
+                                        }
                                         if (socios.length > 1) {
                                             let i2 = 0;
                                             do {
@@ -602,11 +602,10 @@ app.post("/pessoasPesq", verify, (req, res) => {
     }
 });
 app.post("/pessoasPesqSep", verify, (req, res) => {
-    let { id_ent, campo, text1, text2, op_tipocad, limit_rows } = req.body;
+    let { id_ent, campo, text1, text2, op_tipocad } = req.body;
     let CONDICAO = '';
     let CONDICAO6 = '';
     if (text1 === '*') { text1 = ''; text2 = '' }
-    if (!limit_rows) { limit_rows = 500 }
     switch (campo) {
         case 'data_cad': CONDICAO = `and pessoas.data_cad between "${text1.replace('/', '-')}" and "${text2.replace('/', '-')}"`; break;
         case 'cod_pessoa': CONDICAO = `and pessoas.cod_pessoa like '%${text1}%'`; break;
@@ -620,7 +619,7 @@ app.post("/pessoasPesqSep", verify, (req, res) => {
     }
     if (CONDICAO) {
         SQL = `select pessoas.id_pessoa,pessoas.tipocad, pessoas.cod_pessoa, pessoas.nome_pessoa, pessoas.cpf_cnpj, pessoas.cep, pessoas.rua,pessoas.numero,pessoas.email,pessoas.telefone,pessoas.fixo,
-    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} ${CONDICAO6} ${CONDICAO} and LENGTH(pessoas.cpf_cnpj) < 12 order by pessoas.cod_pessoa desc limit ${limit_rows}`;
+    pessoas.bairro,pessoas.cidade,pessoas.uf,pessoas.data_cad from pessoas where pessoas.id_ent = ${id_ent} ${CONDICAO6} ${CONDICAO} and LENGTH(pessoas.cpf_cnpj) < 12 order by pessoas.cod_pessoa desc limit 100`;
         db.query(SQL, (err, result) => {
             if (err) { res.status(404).json('404!'); console.log(err) }
             else res.send(result);
@@ -3863,7 +3862,8 @@ app.post("/tumulosPesq", verify, (req, res) => {
         cemiterios.id_cemi,cemiterios.nome_cemi, lancmtos.pago FROM tumulos 
         LEFT JOIN cemiterios ON cemiterios.id_cemi = tumulos.id_cemi LEFT JOIN pessoas ON pessoas.id_pessoa = tumulos.id_pessoa 
         LEFT JOIN lancmtos on lancmtos.referencia = tumulos.id_tum where tumulos.id_ent = ${id_ent} and ${CONDICAO} limit ${limit_rows} `;
-        db.query(SQL, (err, result) => {console.log(SQL)
+        db.query(SQL, (err, result) => {
+            console.log(SQL)
             if (err) { res.status(404).json('404!') }
             else res.send(result);
         });
@@ -3903,7 +3903,7 @@ app.delete("/delTum/:id_tum/:usu_cad", verify, (req, res) => {
 });
 
 app.post("/postTum", verify, async (req, res) => {
-    let { id_ent, id_cemi, id_user, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao,isencao, descricao, obs, usu_cad, data_cad,
+    let { id_ent, id_cemi, id_user, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, isencao, descricao, obs, usu_cad, data_cad,
         data_alt, area_terreno, area_construida, testada, profundidade, tx1, tx2, tx3, vl, desconto, situacao } = req.body;
     //const {data_cad} = Date.now();
     let inscricao = `${st + qd + lt}`;
@@ -3915,97 +3915,99 @@ app.post("/postTum", verify, async (req, res) => {
         if (role === 3) {
             res.status(401).json('Usuário não autorizado')
         } else {
-            
-              let sql = `select tumulos.inscricao from tumulos WHERE tumulos.id_ent = '${id_ent}' and tumulos.inscricao = '${inscricao}' and tumulos.inscricao > 1`;
+
+            let sql = `select tumulos.inscricao from tumulos WHERE tumulos.id_ent = '${id_ent}' and tumulos.inscricao = '${inscricao}' and tumulos.inscricao > 1`;
             db.query(sql, (err, result) => {
                 let resSelc = result.length;
-                if (resSelc){
+                if (resSelc) {
                     res.status(203).json({ msg: 'Inscrição já cadastrada!' })
                 } else {
-            let cod_rec = '4021';
-            let sql0 = `select receitas.valor,receitas.id_rec from receitas where receitas.cod_rec = ${cod_rec} and id_ent = ${id_ent}`;
-            db.query(sql0, (err, receita) => {
-                if (err) { res.status(404).json('404: Receita 4021!'), console.log('err rec', err) }
-                else { //res.set(receita[0])
-                    let SelCod = `select max(cod_tum) as cod_tum from tumulos WHERE id_ent = ${id_ent}`;
-                    db.query(SelCod, (err, result) => {
-                        if (err) { res.status(404).json('404!') }
-                        else { res.set(result[0]); }
+                    let cod_rec = '4021';
+                    let sql0 = `select receitas.valor,receitas.id_rec from receitas where receitas.cod_rec = ${cod_rec} and id_ent = ${id_ent}`;
+                    db.query(sql0, (err, receita) => {
+                        if (err) { res.status(404).json('404: Receita 4021!'), console.log('err rec', err) }
+                        else { //res.set(receita[0])
+                            let SelCod = `select max(cod_tum) as cod_tum from tumulos WHERE id_ent = ${id_ent}`;
+                            db.query(SelCod, (err, result) => {
+                                if (err) { res.status(404).json('404!') }
+                                else { res.set(result[0]); }
 
-                        let cod_tum = result[0].cod_tum + 1;
-                        if (cod_tum) {
-                             if(!vl){vl = 0};                            
-                            if (vl <= 0) {
-                                vl = receita[0].valor;                           
-                            } 
-                        let vl_total = parseFloat(vl) + parseFloat(tx1) + parseFloat(tx2) + parseFloat(tx3);                           
-                            let SQL = `insert into tumulos (id_ent, cod_tum,inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao,isencao, descricao, obs,usu_cad,data_cad,data_alt,area_terreno,area_construida,
+                                let cod_tum = result[0].cod_tum + 1;
+                                if (cod_tum) {
+                                    if (!vl) { vl = 0 };
+                                    if (vl <= 0) {
+                                        vl = receita[0].valor;
+                                    }
+                                    let vl_total = parseFloat(vl) + parseFloat(tx1) + parseFloat(tx2) + parseFloat(tx3);
+                                    let SQL = `insert into tumulos (id_ent, cod_tum,inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao,isencao, descricao, obs,usu_cad,data_cad,data_alt,area_terreno,area_construida,
                     testada, profundidade, vl_total,tx1, tx2, tx3, vl, desconto,situacao) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-                            db.query(SQL, [id_ent, cod_tum, inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao,isencao, descricao, obs, usu_cad, data_cad, data_alt, area_terreno, area_construida,
-                                testada, profundidade, vl_total, tx1, tx2, tx3, vl, desconto, situacao], (err, result1) => {
-                                    if (err) { console.log(err) }
-                                    else {
-                                        let id_tum = result1.insertId;
-                                        if (id_tum) {
-                                            let sql1 = `select entidades.dias_venc from entidades where entidades.id_ent = ${id_ent}`;
-                                            db.query(sql1, (err, entidad) => {
+                                    db.query(SQL, [id_ent, cod_tum, inscricao, id_cemi, id_pessoa, dst, st, qd, lt, cor, tipo, conserv, padrao, isencao, descricao, obs, usu_cad, data_cad, data_alt, area_terreno, area_construida,
+                                        testada, profundidade, vl_total, tx1, tx2, tx3, vl, desconto, situacao], (err, result1) => {
+                                            if (err) { console.log(err) }
+                                            else {
+                                                let id_tum = result1.insertId;
+                                                if (id_tum) {
+                                                    let sql1 = `select entidades.dias_venc from entidades where entidades.id_ent = ${id_ent}`;
+                                                    db.query(sql1, (err, entidad) => {
 
-                                                let SelCod = `select max(cod_lanc) as cod_lanc FROM lancmtos WHERE id_ent = ${id_ent}`;
-                                                db.query(SelCod, (err, result) => {
-                                                    if (err) { res.status(404).json('404!'), console.log('errLOG', err) }
-                                                    else {
-                                                        res.set(result[0])
-
-                                                        let dataAtual = new Date();
-                                                        dataAtual.setDate(dataAtual.getDate() + entidad[0].dias_venc);
-                                                        let data_venc = dataAtual.toLocaleDateString('pt-BR');
-                                                        let data_lanc = data_cad;
-                                                        let cod_lanc = result[0].cod_lanc + 1;
-                                                        let valor_real = vl_total;
-                                                        let valor_original = vl_total;
-                                                        let id_rec = receita[0].id_rec;
-                                                        let parc = '0'; let situacao = 'E'; let pago = 'N'; let cod_insc = cod_tum; let numero_proc = ("00000" + cod_tum).slice(-5) + '/' + new Date().getFullYear();
-                                                        let referencia = id_tum; let exercicio = new Date().getFullYear();
-                                                        let nossonum = exercicio + ("0000" + cod_rec).slice(-4) + ("000000" + cod_tum).slice(-6);
-                                                        let desc_lanc = `VALOR REFERÊNTE A TAXA DE MANUTENÇÃO TUMULO: ${("000000" + cod_tum).slice(-6)} INSCRIÇÂO: ${inscricao}.`;
-                                                        let sql2 = "insert into lancmtos (id_ent,cod_lanc,id_pessoa, id_user,cod_rec,id_rec,desc_lanc, valor_real,valor_original,parc,situacao,nossonum,pago,exercicio,cod_insc,numero_proc,data_lanc,data_venc, referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                                                        db.query(sql2, [id_ent, cod_lanc, id_pessoa, id_user, cod_rec, id_rec, desc_lanc, valor_real, valor_original, parc, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, data_lanc, data_venc, referencia], (err1, result3) => {
-                                                            if (err1) { res.status(404).json('404!'), console.log(err1) }
+                                                        let SelCod = `select max(cod_lanc) as cod_lanc FROM lancmtos WHERE id_ent = ${id_ent}`;
+                                                        db.query(SelCod, (err, result) => {
+                                                            if (err) { res.status(404).json('404!'), console.log('errLOG', err) }
                                                             else {
-                                                                //res.set(result3[0]) 
-                                                                let id_lanc = result3.insertId;
-                                                                if (id_lanc) {
-                                                                    let cod_lancdet = id_lanc;
-                                                                    let sql3 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,cod_rec,id_rec,valor_real, situacao,nossonum,pago,exercicio,cod_insc,numero_proc,referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                                                                    db.query(sql3, [id_ent, cod_lancdet, id_pessoa, id_user, cod_rec, id_rec, valor_real, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, referencia], (err1, result4) => {
-                                                                        if (err1) {
-                                                                            res.status(404).json('erro ao Gerar lancmto'); console.log(err1);
-                                                                        } else { console.log(sql3)
-                                                                            res.status(200).json({ id_tum, msg: 'Salvo' })
-                                                                        }
-                                                                    });
-                                                                } else { res.status(404).json('erro ao Gerar lancmto'); console.log('erro ao Gerar lancmto'); }
+                                                                res.set(result[0])
+
+                                                                let dataAtual = new Date();
+                                                                dataAtual.setDate(dataAtual.getDate() + entidad[0].dias_venc);
+                                                                let data_venc = dataAtual.toLocaleDateString('pt-BR');
+                                                                let data_lanc = data_cad;
+                                                                let cod_lanc = result[0].cod_lanc + 1;
+                                                                let valor_real = vl_total;
+                                                                let valor_original = vl_total;
+                                                                let id_rec = receita[0].id_rec;
+                                                                let parc = '0'; let situacao = 'E'; let pago = 'N'; let cod_insc = cod_tum; let numero_proc = ("00000" + cod_tum).slice(-5) + '/' + new Date().getFullYear();
+                                                                let referencia = id_tum; let exercicio = new Date().getFullYear();
+                                                                let nossonum = exercicio + ("0000" + cod_rec).slice(-4) + ("000000" + cod_tum).slice(-6);
+                                                                let desc_lanc = `VALOR REFERÊNTE A TAXA DE MANUTENÇÃO TUMULO: ${("000000" + cod_tum).slice(-6)} INSCRIÇÂO: ${inscricao}.`;
+                                                                let sql2 = "insert into lancmtos (id_ent,cod_lanc,id_pessoa, id_user,cod_rec,id_rec,desc_lanc, valor_real,valor_original,parc,situacao,nossonum,pago,exercicio,cod_insc,numero_proc,data_lanc,data_venc, referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                                db.query(sql2, [id_ent, cod_lanc, id_pessoa, id_user, cod_rec, id_rec, desc_lanc, valor_real, valor_original, parc, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, data_lanc, data_venc, referencia], (err1, result3) => {
+                                                                    if (err1) { res.status(404).json('404!'), console.log(err1) }
+                                                                    else {
+                                                                        //res.set(result3[0]) 
+                                                                        let id_lanc = result3.insertId;
+                                                                        if (id_lanc) {
+                                                                            let cod_lancdet = id_lanc;
+                                                                            let sql3 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,cod_rec,id_rec,valor_real, situacao,nossonum,pago,exercicio,cod_insc,numero_proc,referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                                            db.query(sql3, [id_ent, cod_lancdet, id_pessoa, id_user, cod_rec, id_rec, valor_real, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, referencia], (err1, result4) => {
+                                                                                if (err1) {
+                                                                                    res.status(404).json('erro ao Gerar lancmto'); console.log(err1);
+                                                                                } else {
+                                                                                    console.log(sql3)
+                                                                                    res.status(200).json({ id_tum, msg: 'Salvo' })
+                                                                                }
+                                                                            });
+                                                                        } else { res.status(404).json('erro ao Gerar lancmto'); console.log('erro ao Gerar lancmto'); }
+                                                                    }
+                                                                });
                                                             }
                                                         });
-                                                    }
-                                                });
-                                            });//fim select dias vencimento
-                                        }
-                                    }
-                                });
-                        } else {
-                            console.log('Erro ao Gerar Codigo!')
+                                                    });//fim select dias vencimento
+                                                }
+                                            }
+                                        });
+                                } else {
+                                    console.log('Erro ao Gerar Codigo!')
+                                }
+                            });
                         }
                     });
                 }
             });
         }
-            }); }
     });
 });
 
 app.put("/putTum/", verify, async (req, res) => {
-    const { id_tum, id_cemi, id_user, id_pessoa, dst, st, qd, lt, tipo, conserv, padrao,isencao, descricao, obs, usu_cad, data_alt, area_terreno, area_construida, testada,
+    const { id_tum, id_cemi, id_user, id_pessoa, dst, st, qd, lt, tipo, conserv, padrao, isencao, descricao, obs, usu_cad, data_alt, area_terreno, area_construida, testada,
         profundidade, tx1, tx2, tx3, vl, desconto, situacao } = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
@@ -4035,7 +4037,7 @@ app.get('/tumLanc/:id_tum', async (req, res) => {
     db.query(SQL, (err, result) => {
         console.log(SQL)
         if (err) { res.status(404).json('404!') }
-        else { res.json(result[0].id_lanc)}
+        else { res.json(result[0].id_lanc) }
     });
 });
 
@@ -4226,8 +4228,8 @@ app.delete("/delAlvaraTum/:id/:id_tum", verify, async (req, res) => {
 }
 );
 //===========sepultamentos========//
-app.post("/sepPost", verify, async (req, res) => {
-    const { id_ent, id_tum, cod_tum, inscricao, cod_verificacao, id_user, id_pessoa_sep, id_pessoa, id_cemi, id_oper, septdo, cpf_cnpj_septdo, familia, filiacao, num_obito, cov, cod_gaveta, descricao,
+app.post("/sepmtoPost", verify, async (req, res) => {
+    const { id_ent, id_tum, cod_tum, inscricao,isencao, cod_verificacao, id_user, id_pessoa_sep, id_pessoa, id_cemi, id_oper, septdo, cpf_cnpj_septdo, familia, filiacao, num_obito, cov, cod_gaveta, descricao,
         situacao_pgmto, cod_rec, data_cad, data_ncmto, data_sepmto, usu_cad, id_assin1, id_assin2, id_assin3 } = req.body;
     //permissão de usuário
     let Sql = `select role from usuarios where id_user = ${id_user}`;
@@ -4257,52 +4259,50 @@ app.post("/sepPost", verify, async (req, res) => {
                             let SQL = `insert into sepmtos (id_ent, id_tum,cod_tum,inscricao,cod_verificacao,id_user,id_pessoa_sep, id_pessoa,id_cemi,id_oper,cod_sep,septdo,cpf_cnpj_septdo,familia,filiacao,num_obito,cov,cod_gaveta,descricao,situacao_pgmto,id_lancmto,cod_rec,data_cad,data_ncmto,data_sepmto,id_rec,vl_total,usu_cad,id_assin1,id_assin2,id_assin3) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
                             db.query(SQL, [id_ent, id_tum, cod_tum, inscricao, cod_verificacao, id_user, id_pessoa_sep, id_pessoa, id_cemi, id_oper, cod_sep, septdo, cpf_cnpj_septdo, familia, filiacao, num_obito, cov, cod_gaveta, descricao, situacao_pgmto, id_lancmto, cod_rec, data_cad, data_ncmto, data_sepmto, id_rec, vl_total, usu_cad, id_assin1, id_assin2, id_assin3], (err, result2) => {
                                 if (err) { console.log('erro 401:', err); res.status(404).json('404!') }
-                                else {
-                                    let id_sep = result2.insertId;
-                                    if (id_sep) {
-                                        let sql1 = `select entidades.dias_venc from entidades where entidades.id_ent = ${id_ent}`;
-                                        db.query(sql1, (err, entidad) => {
+                                else { let id_sep = result2.insertId;
+                                    if (isencao === '1') {
+                                            let sql1 = `select entidades.dias_venc from entidades where entidades.id_ent = ${id_ent}`;
+                                            db.query(sql1, (err, entidad) => {
+                                                let SelCod = `select max(cod_lanc) as cod_lanc FROM lancmtos WHERE id_ent = ${id_ent}`;
+                                                db.query(SelCod, (err, result) => {
+                                                    if (err) { res.status(404).json('404!'), console.log('errLOG', err) }
+                                                    else {
+                                                        res.set(result[0])
+                                                        let dataAtual = new Date();
+                                                        dataAtual.setDate(dataAtual.getDate() + entidad[0].dias_venc);
+                                                        let data_venc = dataAtual.toLocaleDateString('pt-BR');
+                                                        let data_lanc = data_cad;
+                                                        let cod_lanc = result[0].cod_lanc + 1;
+                                                        let valor_real = receita[0].valor; let id_rec = receita[0].id_rec; let valor_original = receita[0].valor;
+                                                        let parc = '0'; let situacao = 'E'; let pago = 'N'; let cod_insc = cod_sep; let numero_proc = ("00000" + cod_sep).slice(-5) + '/' + new Date().getFullYear();
+                                                        let referencia = id_sep; let exercicio = new Date().getFullYear();
+                                                        let nossonum = exercicio + ("0000" + cod_rec).slice(-4) + ("000000" + cod_sep).slice(-6);
+                                                        let desc_lanc = `VALOR REFERÊNTE TAXA DE SEPULTAMENTO: ${("000000" + cod_sep).slice(-6)}.`;
+                                                        let sql2 = "insert into lancmtos (id_ent,cod_lanc,id_pessoa, id_user,cod_rec,id_rec,desc_lanc, valor_real,valor_original,parc,situacao,nossonum,pago,exercicio,cod_insc,numero_proc,data_lanc,data_venc, referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                        db.query(sql2, [id_ent, cod_lanc, id_pessoa, id_user, cod_rec, id_rec, desc_lanc, valor_real, valor_original, parc, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, data_lanc, data_venc, referencia], (err1, result3) => {
+                                                            if (err1) { res.status(404).json('404!'), console.log(err1) }
+                                                            else {
+                                                                //res.set(result3[0]) 
+                                                                let id_lanc = result3.insertId;
+                                                                if (id_lanc) {
+                                                                    let cod_lancdet = id_lanc;
+                                                                    let sql3 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,cod_rec,id_rec,valor_real, situacao,nossonum,pago,exercicio,cod_insc,numero_proc,referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                                                    db.query(sql3, [id_ent, cod_lancdet, id_pessoa, id_user, cod_rec, id_rec, valor_real, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, referencia], (err1, result4) => {
+                                                                        if (err1) {
+                                                                            res.status(404).json('erro ao Gerar lancmto'); console.log(err1);
+                                                                        } else {
+                                                                            res.status(200).json({ id_sep, msg: 'Salvo' })
+                                                                        }
+                                                                    });
+                                                                } else { res.status(404).json('erro ao Gerar lancmto'); console.log('erro ao Gerar lancmto'); }
+                                                            }
+                                                        });
 
-                                            let SelCod = `select max(cod_lanc) as cod_lanc FROM lancmtos WHERE id_ent = ${id_ent}`;
-                                            db.query(SelCod, (err, result) => {
-                                                if (err) { res.status(404).json('404!'), console.log('errLOG', err) }
-                                                else {
-                                                    res.set(result[0])
-
-                                                    let dataAtual = new Date();
-                                                    dataAtual.setDate(dataAtual.getDate() + entidad[0].dias_venc);
-                                                    let data_venc = dataAtual.toLocaleDateString('pt-BR');
-                                                    let data_lanc = data_cad;
-                                                    let cod_lanc = result[0].cod_lanc + 1;
-                                                    let valor_real = receita[0].valor; let id_rec = receita[0].id_rec; let valor_original = receita[0].valor;
-                                                    let parc = '0'; let situacao = 'E'; let pago = 'N'; let cod_insc = cod_sep; let numero_proc = ("00000" + cod_sep).slice(-5) + '/' + new Date().getFullYear();
-                                                    let referencia = id_sep; let exercicio = new Date().getFullYear();
-                                                    let nossonum = exercicio + ("0000" + cod_rec).slice(-4) + ("000000" + cod_sep).slice(-6);
-                                                    let desc_lanc = `VALOR REFERÊNTE TAXA DE SEPULTAMENTO: ${("000000" + cod_sep).slice(-6)}.`;
-                                                    let sql2 = "insert into lancmtos (id_ent,cod_lanc,id_pessoa, id_user,cod_rec,id_rec,desc_lanc, valor_real,valor_original,parc,situacao,nossonum,pago,exercicio,cod_insc,numero_proc,data_lanc,data_venc, referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                                                    db.query(sql2, [id_ent, cod_lanc, id_pessoa, id_user, cod_rec, id_rec, desc_lanc, valor_real, valor_original, parc, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, data_lanc, data_venc, referencia], (err1, result3) => {
-                                                        if (err1) { res.status(404).json('404!'), console.log(err1) }
-                                                        else {
-                                                            //res.set(result3[0]) 
-                                                            let id_lanc = result3.insertId;
-                                                            if (id_lanc) {
-                                                                let cod_lancdet = id_lanc;
-                                                                let sql3 = "insert into lancmtos_detalhado (id_ent,cod_lancdet,id_pessoa,id_user,cod_rec,id_rec,valor_real, situacao,nossonum,pago,exercicio,cod_insc,numero_proc,referencia) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                                                                db.query(sql3, [id_ent, cod_lancdet, id_pessoa, id_user, cod_rec, id_rec, valor_real, situacao, nossonum, pago, exercicio, cod_insc, numero_proc, referencia], (err1, result4) => {
-                                                                    if (err1) {
-                                                                        res.status(404).json('erro ao Gerar lancmto'); console.log(err1);
-                                                                    } else {
-                                                                        res.status(200).json({ id_sep, msg: 'Salvo' })
-                                                                    }
-                                                                });
-                                                            } else { res.status(404).json('erro ao Gerar lancmto'); console.log('erro ao Gerar lancmto'); }
-                                                        }
-                                                    });
-
-                                                }
-                                            });
-                                        });//fim select dias vencimento
-
+                                                    }
+                                                });
+                                            });//fim select dias vencimento
+                                    } else {
+                                        res.status(200).json({ id_sep, msg: 'Salvo' })
                                     }
                                 }
                             });
@@ -4318,7 +4318,7 @@ app.post("/sepPost", verify, async (req, res) => {
 });
 
 //update com as variaveis direto na coluna indicada.   
-app.put("/sepPut/", verify, async (req, res) => {
+app.put("/sepmtoPut/", verify, async (req, res) => {
     const { id_sep, id_user, familia, filiacao, num_obito, cov, cod_gaveta, descricao, id_oper, data_alt, data_ncmto, data_sepmto, usu_cad } = req.body;
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
@@ -4484,7 +4484,7 @@ app.get("/EntId/:id_ent", (req, res) => {
 app.put("/ajustes", verify, async (req, res) => {
     let { id_ent, calc_imovel, desconto_iptu, vvi, insc_seq, maskinsc, maskgrupo, usu_cad,
         campo1_nome, campo1_tam, campo2_nome, campo2_tam, campo3_nome, campo3_tam, campo4_nome, campo5_nome, campo6_nome, tx1, tx2, tx3, data_alt, aliq_itbi, desconto_itbi, imp_itbi, bloq_aliq, venc_itbi, venc_unica,
-        venc_antec, venc_dvtotal, venc_dvexercicio, venc_unica_cemi, venc_antec_cemi, valor_taxa, desconto_antec, limit_rows } = req.body;
+        venc_antec, venc_dvtotal, venc_dvexercicio, venc_unica_cemi, venc_antec_cemi, valor_taxa, desconto_antec } = req.body;
     // venc_itbi = venc_itbi.split('-').reverse().join('/');
     // venc_unica = venc_unica.split('-').reverse().join('/');
     // venc_antec = venc_antec.split('-').reverse().join('/');
@@ -4496,7 +4496,7 @@ app.put("/ajustes", verify, async (req, res) => {
         campo1_nome = '${campo1_nome}',campo1_tam = '${campo1_tam}',campo2_nome = '${campo2_nome}',campo2_tam = '${campo2_tam}',campo3_nome = '${campo3_nome}',
         campo3_tam = '${campo3_tam}',campo4_nome = '${campo4_nome}',campo5_nome = '${campo5_nome}',campo6_nome = '${campo6_nome}',tx1 = '${tx1}',tx2 = '${tx2}',tx3 = '${tx3}', data_alt = '${data_alt}',
         aliq_itbi = '${aliq_itbi}',desconto_itbi = '${desconto_itbi}',imp_itbi = '${imp_itbi}',bloq_aliq = '${bloq_aliq}',venc_itbi = '${venc_itbi}',venc_unica = '${venc_unica}',venc_antec = '${venc_antec}',
-        venc_dvtotal = '${venc_dvtotal}',venc_dvexercicio = '${venc_dvexercicio}',venc_unica_cemi = '${venc_unica_cemi}',venc_antec_cemi = '${venc_antec_cemi}', valor_taxa = '${valor_taxa}', desconto_antec = '${desconto_antec}',limit_rows = ${limit_rows} where id_ent = ${id_ent}`;
+        venc_dvtotal = '${venc_dvtotal}',venc_dvexercicio = '${venc_dvexercicio}',venc_unica_cemi = '${venc_unica_cemi}',venc_antec_cemi = '${venc_antec_cemi}', valor_taxa = '${valor_taxa}', desconto_antec = '${desconto_antec}' where id_ent = ${id_ent}`;
     db.query(sql, (err, result) => {
         if (err) { res.status(404).json('404!'), console.log(err) }
         else {
@@ -4519,10 +4519,10 @@ app.put("/entidade", verify, async (req, res) => {
       });
       uploadUser1.single('arquivo')(req, res, function (err) {    }); */
     let { id_ent, entidade, email, cnpj, rua, numero, bairro, cidade, uf, cep, secretaria, lei, decreto, msg4, msg1, msg2, msg3, usu_cad,
-        telefone, fixo, data_alt } = req.body;
+        telefone, fixo,data_alt,caminho } = req.body;
     let sql = `update entidades set entidade = '${entidade}',email = '${email}',cnpj = '${cnpj}',rua = '${rua}',numero = '${numero}',bairro = '${bairro}',cidade = '${cidade}',uf = '${uf}',cep = '${cep}',secretaria = '${secretaria}',lei = '${lei}',decreto = '${decreto}', 
         msg4 = '${msg4}', msg1 = '${msg1}', msg2 = '${msg2}',msg3 = '${msg3}', usu_cad = '${usu_cad}', telefone = '${telefone}',
-        fixo = '${fixo}',data_alt = '${data_alt}' where id_ent = ${id_ent}`;
+        fixo = '${fixo}',data_alt = '${data_alt}',caminho = '${caminho}' where id_ent = ${id_ent}`;
     db.query(sql, (err, result) => {
         if (err) { res.status(404).json('404!'), console.log(err) }
         else { res.status(200).json(result) }
@@ -4545,7 +4545,12 @@ app.put("/entidadeAdm", verify, async (req, res) => {
     //let caminho = '';         
 
     let { id_ent, cod_ent, entidade, cnpj, rua, cidade, usu_cad, telefone, data_alt, urlbras, ativo, tributos, stitulo, caminho, obs } = req.body;
-    caminho = id_ent + '_' + cod_ent + '.jpg';
+    if(caminho === ''){
+       caminho = id_ent + '_' + cod_ent + '.jpg'
+    };
+    if(caminho === 'simg'){
+       caminho = 'simg'
+    };
     let sql = `update entidades set entidade = '${entidade}', cnpj = '${cnpj}',rua = '${rua}', cidade = '${cidade}', usu_cad = '${usu_cad}', telefone = '${telefone}', 
         urlbras = '${urlbras}',ativo = '${ativo}',tributos = '${tributos}',stitulo = '${stitulo}', data_alt = '${data_alt}', caminho = '${caminho}', obs = '${obs}' where id_ent = ${id_ent}`;
     db.query(sql, (err, result) => {
