@@ -4406,7 +4406,7 @@ app.get("/sepmto/:id_sep",
             ;
             if (err) { res.status(404).json('404!') }
             else { //res.send(result) 
-                res.set(result[0]);
+                res.set(result[0].toString('utf8'));
                 let id_assin1 = result[0].id_assin1; let id_assin2 = result[0].id_assin2; let id_assin3 = result[0].id_assin3;
                 if (!id_assin1) { id_assin1 = 0 }
                 let sqla1 = `select id_assin,nome,cargo,matricula FROM assinaturas WHERE id_assin = ${id_assin1}`;
@@ -5020,4 +5020,5 @@ app.post("/m4nut3", verify, async (req, res) => {
             }
         });
     }
+
 });
