@@ -3893,11 +3893,19 @@ app.delete("/delTum/:id_tum/:usu_cad", verify, (req, res) => {
         if (role === 3) {
             res.status(401).json('Usuário não autorizado');
         } else {
-            let SQL = `delete from tumulos where id_tum = ${id_tum}`;
-            db.query(SQL, id_tum, (err) => {
-                if (err) { res.status(405) }
-                else { res.status(200).json("Excluído!") }
-            });
+              let Sql = `select id_alvara from tumulos_alvaras where id_tum = ${id_tum}`;
+    db.query(Sql, (err, result) => {
+        let res1 = result.length;
+        if(res1 > 0){ 
+            console.log('tem registro',res1) 
+        }else{ console.log('não tem',res1)
+// let SQL = `delete from tumulos where id_tum = ${id_tum}`;
+//             db.query(SQL, id_tum, (err) => {
+//                 if (err) { res.status(405) }
+//                 else { res.status(200).json("Excluído!") }
+//             });
+        }
+              });
         }
     });
 });
@@ -4230,7 +4238,7 @@ app.delete("/delAlvaraTum/:id/:id_tum", verify, async (req, res) => {
 //===========sepultamentos========//
 app.post("/sepmtoPost", verify, async (req, res) => {
     const { id_ent, id_tum, cod_tum, inscricao,isencao, cod_verificacao, id_user, id_pessoa_sep, id_pessoa, id_cemi, id_oper, septdo, cpf_cnpj_septdo, familia, filiacao, num_obito, cov, cod_gaveta, descricao,
-        situacao_pgmto, cod_rec, data_cad, data_ncmto, data_sepmto, usu_cad, id_assin1, id_assin2, id_assin3 } = req.body;
+        situacao_pgmto, data_cad, data_ncmto, data_sepmto, usu_cad, id_assin1, id_assin2, id_assin3 } = req.body;
     //permissão de usuário
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
@@ -4243,7 +4251,7 @@ app.post("/sepmtoPost", verify, async (req, res) => {
             let cod_rec = '4018';
             let sql0 = `select receitas.valor,receitas.id_rec from receitas where receitas.cod_rec = ${cod_rec} and id_ent = ${id_ent}`;
             db.query(sql0, (err, receita) => {
-                if (err) { res.status(404).json('404: Receita 4018!'), console.log('err valor rec', err) }
+                if (err) { res.status(404).json('404: Receita 4018!'); console.log('err valor rec', err) }
                 else { //res.set(receita[0])                                       
 
                     //Gerar codigo do sepmto             
@@ -4259,7 +4267,7 @@ app.post("/sepmtoPost", verify, async (req, res) => {
                             let SQL = `insert into sepmtos (id_ent, id_tum,cod_tum,inscricao,cod_verificacao,id_user,id_pessoa_sep, id_pessoa,id_cemi,id_oper,cod_sep,septdo,cpf_cnpj_septdo,familia,filiacao,num_obito,cov,cod_gaveta,descricao,situacao_pgmto,id_lancmto,cod_rec,data_cad,data_ncmto,data_sepmto,id_rec,vl_total,usu_cad,id_assin1,id_assin2,id_assin3) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
                             db.query(SQL, [id_ent, id_tum, cod_tum, inscricao, cod_verificacao, id_user, id_pessoa_sep, id_pessoa, id_cemi, id_oper, cod_sep, septdo, cpf_cnpj_septdo, familia, filiacao, num_obito, cov, cod_gaveta, descricao, situacao_pgmto, id_lancmto, cod_rec, data_cad, data_ncmto, data_sepmto, id_rec, vl_total, usu_cad, id_assin1, id_assin2, id_assin3], (err, result2) => {
                                 if (err) { console.log('erro 401:', err); res.status(404).json('404!') }
-                                else { let id_sep = result2.insertId;
+                                else { let id_sep = result2.insertId; console.log('isencao:',isencao)
                                     if (isencao === '1') {
                                             let sql1 = `select entidades.dias_venc from entidades where entidades.id_ent = ${id_ent}`;
                                             db.query(sql1, (err, entidad) => {
@@ -4319,10 +4327,10 @@ app.post("/sepmtoPost", verify, async (req, res) => {
 
 //update com as variaveis direto na coluna indicada.   
 app.put("/sepmtoPut/", verify, async (req, res) => {
-    const { id_sep, id_user, familia, filiacao, num_obito, cov, cod_gaveta, descricao, id_oper, data_alt, data_ncmto, data_sepmto, usu_cad } = req.body;
+    const { id_sep, id_user, familia, filiacao, num_obito, cov, cod_gaveta, descricao, id_oper, data_alt, data_ncmto, data_sepmto, usu_cad } = req.body; console.log(req.body)
     let Sql = `select role from usuarios where id_user = ${id_user}`;
     db.query(Sql, (err, result) => {
-        if (err) { res.status(404).json('404!') }
+        if (err) { res.status(404).json('404!'); console.log(err) }
         else { res.set(result[0]); }
         role = result[0].role;
         if (role === 3) {
@@ -4357,7 +4365,7 @@ app.post("/sepmtoPesq", verify, (req, res) => {
     if (CONDICAO) {
         SQL = `select tumulos.dst,tumulos.inscricao, tumulos.st, tumulos.qd, tumulos.lt,tumulos.tipo, pessoas.id_pessoa, pessoas.nome_pessoa,pessoas.cpf_cnpj,pessoas.rua,pessoas.numero,pessoas.bairro,
                 pessoas.cidade,pessoas.uf,pessoas.telefone,pessoas.email,sepmtos.id_sep,sepmtos.cod_tum,sepmtos.cod_sep,sepmtos.septdo,sepmtos.cpf_cnpj_septdo,
-                sepmtos.familia,sepmtos.cod_gaveta,sepmtos.cov,sepmtos.descricao,sepmtos.data_cad, sepmtos.vl_total,cemiterios.id_cemi,cemiterios.nome_cemi,lancmtos.pago
+                sepmtos.familia,sepmtos.cod_gaveta,sepmtos.cod_verificacao,sepmtos.cov,sepmtos.descricao,sepmtos.data_cad, sepmtos.vl_total,cemiterios.id_cemi,cemiterios.nome_cemi,lancmtos.pago
                 FROM sepmtos 
                 LEFT JOIN tumulos on tumulos.id_tum = sepmtos.id_tum 
                 LEFT JOIN cemiterios on cemiterios.id_cemi = sepmtos.id_cemi 
